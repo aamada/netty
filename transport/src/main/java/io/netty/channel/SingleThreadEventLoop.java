@@ -80,6 +80,8 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
 
     @Override
     public ChannelFuture register(Channel channel) {
+        // 你看在这里进行注册的时候， 新建了一个提前返回的对象
+        // promise里有channel， 有线程
         return register(new DefaultChannelPromise(channel, this));
     }
 
@@ -87,6 +89,9 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
     public ChannelFuture register(final ChannelPromise promise) {
         ObjectUtil.checkNotNull(promise, "promise");
         promise.channel().unsafe().register(this, promise);
+        // promise
+        // channnel
+        // channel
         return promise;
     }
 

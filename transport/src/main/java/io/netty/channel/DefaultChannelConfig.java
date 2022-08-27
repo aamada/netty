@@ -76,6 +76,7 @@ public class DefaultChannelConfig implements ChannelConfig {
     }
 
     protected DefaultChannelConfig(Channel channel, RecvByteBufAllocator allocator) {
+        // 给这个ByteBuf设置属性
         setRecvByteBufAllocator(allocator, channel.metadata());
         this.channel = channel;
     }
@@ -324,6 +325,7 @@ public class DefaultChannelConfig implements ChannelConfig {
         checkNotNull(allocator, "allocator");
         checkNotNull(metadata, "metadata");
         if (allocator instanceof MaxMessagesRecvByteBufAllocator) {
+            // 最大的消息量
             ((MaxMessagesRecvByteBufAllocator) allocator).maxMessagesPerRead(metadata.defaultMaxMessagesPerRead());
         }
         setRecvByteBufAllocator(allocator);

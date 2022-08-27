@@ -139,11 +139,16 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selectorProvider,
                  SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,
                  EventLoopTaskQueueFactory taskQueueFactory, EventLoopTaskQueueFactory tailTaskQueueFactory) {
+        // 线程组， 线程执行器， false， 新建一个task， 新建一个task， 拒绝策略
         super(parent, executor, false, newTaskQueue(taskQueueFactory), newTaskQueue(tailTaskQueueFactory),
                 rejectedExecutionHandler);
+        // 确保这个提供者
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
+        // 选择策略
         this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
+        // 打开这个选择策略
         final SelectorTuple selectorTuple = openSelector();
+        // 选择器
         this.selector = selectorTuple.selector;
         this.unwrappedSelector = selectorTuple.unwrappedSelector;
     }
@@ -171,9 +176,11 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
     }
 
+    // 打开一个选择器都这么复杂
     private SelectorTuple openSelector() {
         final Selector unwrappedSelector;
         try {
+            // 打开这个选择器
             unwrappedSelector = provider.openSelector();
         } catch (IOException e) {
             throw new ChannelException("failed to open a new selector", e);
@@ -208,6 +215,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
 
         final Class<?> selectorImplClass = (Class<?>) maybeSelectorImplClass;
+        // 一个集合哦， 还给封装起来了
         final SelectedSelectionKeySet selectedKeySet = new SelectedSelectionKeySet();
 
         Object maybeException = AccessController.doPrivileged(new PrivilegedAction<Object>() {

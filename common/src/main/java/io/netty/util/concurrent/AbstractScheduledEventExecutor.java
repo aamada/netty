@@ -43,6 +43,7 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
        public void run() { } // Do nothing
     };
 
+    // 这个线程里， 一些定时执行的任务
     PriorityQueue<ScheduledFutureTask<?>> scheduledTaskQueue;
 
     long nextTaskId;
@@ -51,6 +52,7 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     }
 
     protected AbstractScheduledEventExecutor(EventExecutorGroup parent) {
+        // 一个抽象的定时事件执行器
         super(parent);
     }
 
@@ -125,11 +127,14 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
      */
     protected void cancelScheduledTasks() {
         assert inEventLoop();
+        // 拿到这个队列
         PriorityQueue<ScheduledFutureTask<?>> scheduledTaskQueue = this.scheduledTaskQueue;
         if (isNullOrEmpty(scheduledTaskQueue)) {
+            // 如果为空， 直接返回
             return;
         }
 
+        // 将其转换成一个数组
         final ScheduledFutureTask<?>[] scheduledTasks =
                 scheduledTaskQueue.toArray(new ScheduledFutureTask<?>[0]);
 
@@ -154,11 +159,13 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     protected final Runnable pollScheduledTask(long nanoTime) {
         assert inEventLoop();
 
+        // 得到一个任务
         ScheduledFutureTask<?> scheduledTask = peekScheduledTask();
         if (scheduledTask == null || scheduledTask.deadlineNanos() - nanoTime > 0) {
             return null;
         }
         scheduledTaskQueue.remove();
+        // 设置已经被消费了
         scheduledTask.setConsumed();
         return scheduledTask;
     }
@@ -180,6 +187,7 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
         return scheduledTask != null ? scheduledTask.deadlineNanos() : -1;
     }
 
+    // 从队列中取出一个任务
     final ScheduledFutureTask<?> peekScheduledTask() {
         Queue<ScheduledFutureTask<?>> scheduledTaskQueue = this.scheduledTaskQueue;
         return scheduledTaskQueue != null ? scheduledTaskQueue.peek() : null;
@@ -193,6 +201,8 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
         return scheduledTask != null && scheduledTask.deadlineNanos() <= getCurrentTimeNanos();
     }
 
+    // 定时执行
+    // AbstractEventExecutor
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         ObjectUtil.checkNotNull(command, "command");
@@ -200,8 +210,10 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
         if (delay < 0) {
             delay = 0;
         }
+        // 校验数据
         validateScheduled0(delay, unit);
 
+        // 定时未来任务
         return schedule(new ScheduledFutureTask<Void>(
                 this,
                 command,

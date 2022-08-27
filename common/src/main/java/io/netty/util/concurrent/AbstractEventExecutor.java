@@ -40,6 +40,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     static final long DEFAULT_SHUTDOWN_QUIET_PERIOD = 2;
     static final long DEFAULT_SHUTDOWN_TIMEOUT = 15;
 
+    // 也就是每一个EventLoop， 都会持有它爹
     private final EventExecutorGroup parent;
     private final Collection<EventExecutor> selfCollection = Collections.<EventExecutor>singleton(this);
 
@@ -48,29 +49,36 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     }
 
     protected AbstractEventExecutor(EventExecutorGroup parent) {
+        // 这个parent就是一个NioEventLoopGroup
         this.parent = parent;
     }
 
+    // EventExecutor
     @Override
     public EventExecutorGroup parent() {
         return parent;
     }
 
+    // EventExecutor
     @Override
     public EventExecutor next() {
         return this;
     }
 
+    // EventExecutor
     @Override
     public boolean inEventLoop() {
+        // 还是留给子类去实现的
         return inEventLoop(Thread.currentThread());
     }
 
+    // EventExecutorGroup
     @Override
     public Iterator<EventExecutor> iterator() {
         return selfCollection.iterator();
     }
 
+    // EventExecutorGroup
     @Override
     public Future<?> shutdownGracefully() {
         return shutdownGracefully(DEFAULT_SHUTDOWN_QUIET_PERIOD, DEFAULT_SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
@@ -93,6 +101,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         return Collections.emptyList();
     }
 
+    // EventExecutor
     @Override
     public <V> Promise<V> newPromise() {
         return new DefaultPromise<V>(this);
@@ -138,6 +147,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         return new PromiseTask<T>(this, callable);
     }
 
+    // AbstractEventExecutor
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay,
                                        TimeUnit unit) {

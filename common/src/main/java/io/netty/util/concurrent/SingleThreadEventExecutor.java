@@ -162,14 +162,22 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
     }
 
+    // 单独的事件执行器
     protected SingleThreadEventExecutor(EventExecutorGroup parent, Executor executor,
                                         boolean addTaskWakesUp, Queue<Runnable> taskQueue,
                                         RejectedExecutionHandler rejectedHandler) {
         super(parent);
+        // false
         this.addTaskWakesUp = addTaskWakesUp;
+        // 可以挂多少个任务？
         this.maxPendingTasks = DEFAULT_MAX_PENDING_EXECUTOR_TASKS;
+        // 执行器， 一个事件执行器,
+        // 事件执行器， 就是当前的一个NioEventLoop
+        // executor传递进来的执行器
         this.executor = ThreadExecutorMap.apply(executor, this);
+        // 一个队列
         this.taskQueue = ObjectUtil.checkNotNull(taskQueue, "taskQueue");
+        // 拒绝策略
         this.rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
     }
 
@@ -283,12 +291,16 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         long nanoTime = getCurrentTimeNanos();
         for (;;) {
             Runnable scheduledTask = pollScheduledTask(nanoTime);
+            // 得到一个任务
             if (scheduledTask == null) {
                 return true;
             }
+            // 添加不成功的话， 再次添加进去
             if (!taskQueue.offer(scheduledTask)) {
                 // No space left in the task queue add it back to the scheduledTaskQueue so we pick it up again.
+                // 再次把这个任务给放入至队列中去
                 scheduledTaskQueue.add((ScheduledFutureTask<?>) scheduledTask);
+                // 获取失败
                 return false;
             }
         }
@@ -371,7 +383,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         boolean ranAtLeastOne = false;
 
         do {
+            // 从它爹那里拿到任务放入至长taskQueue中去
             fetchedAll = fetchFromScheduledTaskQueue();
+            // 运行这里面的任务
             if (runAllTasksFrom(taskQueue)) {
                 ranAtLeastOne = true;
             }
@@ -380,6 +394,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (ranAtLeastOne) {
             lastExecutionTime = getCurrentTimeNanos();
         }
+        // 留给子类去实现
         afterRunningAllTasks();
         return ranAtLeastOne;
     }
@@ -422,8 +437,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (task == null) {
             return false;
         }
+        // 一个死循环， 一直从taskQueue里将任务拿出来， 直到队列里没有任务
         for (;;) {
+            // 去执行
             safeExecute(task);
+            // 再将从队列里获取任务， 然后， 再进行循环
             task = pollTaskFrom(taskQueue);
             if (task == null) {
                 return true;
@@ -556,6 +574,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
     }
 
+    /**
+     * 当前的EventLoop里的线程， 是当前执行到这个位置的线程吗？
+     *
+     * @param thread 执行到这里的这个线程是什么？
+     * @return 返回这个线程是否是这个EventLoop里的线程
+     */
     @Override
     public boolean inEventLoop(Thread thread) {
         return thread == this.thread;
@@ -747,13 +771,16 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      */
     protected boolean confirmShutdown() {
         if (!isShuttingDown()) {
+            // 是否已经关闭？
             return false;
         }
 
         if (!inEventLoop()) {
+            // 必须是自己调用
             throw new IllegalStateException("must be invoked from an event loop");
         }
 
+        // 取消定时任务
         cancelScheduledTasks();
 
         if (gracefulShutdownStartTime == 0) {
@@ -1000,14 +1027,22 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                     logger.warn("Unexpected exception from an event executor: ", t);
                 } finally {
                     for (;;) {
+                        // 刚开始的时候， 这个值是还没有开始的
                         int oldState = state;
                         if (oldState >= ST_SHUTTING_DOWN || STATE_UPDATER.compareAndSet(
                                 SingleThreadEventExecutor.this, oldState, ST_SHUTTING_DOWN)) {
+                            // 如果已经开始了， 那么跳出这个死循环
+                            // 进行下面的步骤
                             break;
                         }
                     }
 
                     // Check if confirmShutdown() was called at the end of the loop.
+                    // run()执行结果后， 才去执行confirmShutdown
+                    // 如果confirmShutdown已经被调用过了， 那么这个值不会为0
+                    // 如果为0， 那么证明confirmShudown还没有调用
+                    // 也就是在run执行结果前， confirmShutdown应该先执行
+                    // confirmShutdown执行完 -> run执行完
                     if (success && gracefulShutdownStartTime == 0) {
                         if (logger.isErrorEnabled()) {
                             logger.error("Buggy " + EventExecutor.class.getSimpleName() + " implementation; " +

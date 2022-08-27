@@ -20,6 +20,9 @@ public interface GenericProgressiveFutureListener<F extends ProgressiveFuture<?>
     /**
      * Invoked when the operation has progressed.
      *
+     * 当异步操作进度发送变化时， listener会被通知， 同时会回调operationProgressed方法， progress是当前进度
+     * total是总进度， progress==total表示操作完成， 如果不知道何时完成操作progress=-1
+     *
      * @param progress the progress of the operation so far (cumulative)
      * @param total the number that signifies the end of the operation when {@code progress} reaches at it.
      *              {@code -1} if the end of operation is unknown.

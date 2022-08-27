@@ -48,6 +48,7 @@ public class DefaultServerSocketChannelConfig extends DefaultChannelConfig
      * Creates a new instance.
      */
     public DefaultServerSocketChannelConfig(ServerSocketChannel channel, ServerSocket javaSocket) {
+        // ServerChannelRecvByteBufAllocator
         super(channel, new ServerChannelRecvByteBufAllocator());
         this.javaSocket = ObjectUtil.checkNotNull(javaSocket, "javaSocket");
     }

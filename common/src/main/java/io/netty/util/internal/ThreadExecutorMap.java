@@ -89,6 +89,7 @@ public final class ThreadExecutorMap {
         return new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
+                // 将Runnable设置到线程中去
                 return threadFactory.newThread(apply(r, eventExecutor));
             }
         };

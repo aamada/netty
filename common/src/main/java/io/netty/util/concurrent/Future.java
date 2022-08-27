@@ -21,6 +21,14 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * The result of an asynchronous operation.
+ *
+ * isSuccess:是否成功
+ * isCancellable:是否取消
+ * case:看原因
+ * addListener:添加监听器
+ * 异步
+ * 等待
+ * 立即获取
  */
 @SuppressWarnings("ClassNameSameAsAncestorName")
 public interface Future<V> extends java.util.concurrent.Future<V> {
@@ -28,17 +36,22 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
     /**
      * Returns {@code true} if and only if the I/O operation was completed
      * successfully.
+     *
+     * 当操作成功时， 返回true
      */
     boolean isSuccess();
 
     /**
      * returns {@code true} if and only if the operation can be cancelled via {@link #cancel(boolean)}.
+     * 只有当操作可以被取消时， 返回true
      */
     boolean isCancellable();
 
     /**
      * Returns the cause of the failed I/O operation if the I/O operation has
      * failed.
+     *
+     * 如果有异常的话， 这里会有值返回
      *
      * @return the cause of the failure.
      *         {@code null} if succeeded or this future is not
@@ -51,6 +64,11 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
      * specified listener is notified when this future is
      * {@linkplain #isDone() done}.  If this future is already
      * completed, the specified listener is notified immediately.
+     *
+     * 添加一个监听器到future，
+     * 当操作完成（成功或失败都算完成， 此事isDone()返回true时，
+     * 会通知
+     * 这个监听器， 如果添加时操作已经完成， 这个监听器会立即被通知
      */
     Future<V> addListener(GenericFutureListener<? extends Future<? super V>> listener);
 
@@ -83,12 +101,16 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
     /**
      * Waits for this future until it is done, and rethrows the cause of the failure if this future
      * failed.
+     *
+     * 同步等待操作完成， 会被打断
      */
     Future<V> sync() throws InterruptedException;
 
     /**
      * Waits for this future until it is done, and rethrows the cause of the failure if this future
      * failed.
+     *
+     * 同步等待，  不会被打断
      */
     Future<V> syncUninterruptibly();
 

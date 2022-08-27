@@ -58,6 +58,8 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
     private static ServerSocketChannel newChannel(SelectorProvider provider, InternetProtocolFamily family) {
         try {
+            // 得到一个原生的ServerSocketChannel
+            // 一个方法， 一个Provider，  一个null
             ServerSocketChannel channel =
                     SelectorProviderUtil.newChannel(OPEN_SERVER_SOCKET_CHANNEL_WITH_FAMILY, provider, family);
             return channel == null ? provider.openServerSocketChannel() : channel;
@@ -93,7 +95,10 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
      * Create a new instance using the given {@link ServerSocketChannel}.
      */
     public NioServerSocketChannel(ServerSocketChannel channel) {
+        // 一个ServerSocketChannel, 一个接收事件
+        // AbstractNioMessageChannel
         super(null, channel, SelectionKey.OP_ACCEPT);
+        // javaChannel获取到的其实就是channel， 就是刚才才新建一个ServerSocketChannel
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());
     }
 

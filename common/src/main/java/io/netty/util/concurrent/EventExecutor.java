@@ -43,6 +43,15 @@ public interface EventExecutor extends EventExecutorGroup {
     /**
      * Return {@code true} if the given {@link Thread} is executed in the event loop,
      * {@code false} otherwise.
+     *
+     * 其它为什么为有这个方法呢？
+     *
+     * channel是与EventLoop绑定的，
+     * promise又是与channel的，
+     *
+     * 这两个里面都持有EventLoop
+     *
+     * 就是要使用 它们自己持有的那个EventLoop来执行这个runnable
      */
     boolean inEventLoop(Thread thread);
 

@@ -26,6 +26,9 @@ public interface GenericFutureListener<F extends Future<?>> extends EventListene
     /**
      * Invoked when the operation associated with the {@link Future} has been completed.
      *
+     * 把一个listener添加到future之后， 当异步操作完成后， listener会被通知一次， 同时会回调operationComplete
+     * 方法， 参数future是当前通知的future， 这意味着， 一个listener可以被添加到多个future中
+     *
      * @param future  the source {@link Future} which called this callback
      */
     void operationComplete(F future) throws Exception;

@@ -80,6 +80,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
      *
      */
     public DefaultPromise(EventExecutor executor) {
+        // 这个执行器不能为null
         this.executor = checkNotNull(executor, "executor");
     }
 
@@ -119,10 +120,14 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public boolean setUncancellable() {
+        // 设置为没有取消状态
         if (RESULT_UPDATER.compareAndSet(this, null, UNCANCELLABLE)) {
+            // 如果设置成功
             return true;
         }
+        // 那么证明这个已经有状态了， 有结果了
         Object result = this.result;
+        // 它是取消了， 还是执行结束了
         return !isDone0(result) || !isCancelled0(result);
     }
 
@@ -177,18 +182,31 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         checkNotNull(listener, "listener");
 
         synchronized (this) {
+            // 添加监听器
             addListener0(listener);
         }
 
         if (isDone()) {
+            // 如果已经完成了， 那么通知监听器
             notifyListeners();
         }
 
         return this;
     }
 
+    /**
+     * 添加监听器
+     *
+     *
+     * 1. 你看先去添加
+     * 2. 添加完成后， 看是否有结果了， 如果有结果的话， 那么直接调用唤醒方法
+     *
+     * @param listeners 监听器
+     * @return 回复
+     */
     @Override
     public Promise<V> addListeners(GenericFutureListener<? extends Future<? super V>>... listeners) {
+        // 不为null
         checkNotNull(listeners, "listeners");
 
         synchronized (this) {
@@ -456,9 +474,13 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         return executor;
     }
 
+    // source_puzzled 这里为什么这样， 就可以知道是死锁了呢？
     protected void checkDeadLock() {
+        // 拿到这个promise的执行器
         EventExecutor e = executor();
         if (e != null && e.inEventLoop()) {
+            // 如果有这个执行器
+            // 这个执行器， 执行到这里的代码， 是EventLoop里的线程
             throw new BlockingOperationException(toString());
         }
     }
@@ -480,22 +502,33 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
                 checkNotNull(listener, "listener"));
     }
 
+    // 执行监听器
     private void notifyListeners() {
+        // 得到执行器
         EventExecutor executor = executor();
         if (executor.inEventLoop()) {
+            // 如果这个线程， 就是EventLoop里的线程的话
+            // 这里也是优化点， 这里有东西
             final InternalThreadLocalMap threadLocals = InternalThreadLocalMap.get();
+            // 栈深度
             final int stackDepth = threadLocals.futureListenerStackDepth();
+            // 如果现在的栈深度 < 最大的栈深度
             if (stackDepth < MAX_LISTENER_STACK_DEPTH) {
+                // 监听器的深度
+                // 深度+1
                 threadLocals.setFutureListenerStackDepth(stackDepth + 1);
                 try {
+                    // 立即去唤醒
                     notifyListenersNow();
                 } finally {
+                    // 你看这里， 把刚才设置的threadlocal中的值设置进去
                     threadLocals.setFutureListenerStackDepth(stackDepth);
                 }
                 return;
             }
         }
 
+        // 安全的执行
         safeExecute(executor, new Runnable() {
             @Override
             public void run() {
@@ -536,6 +569,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private void notifyListenersNow() {
         Object listeners;
+        // 将其进行同步
         synchronized (this) {
             // Only proceed if there are listeners to notify and we are not already notifying listeners.
             if (notifyingListeners || this.listeners == null) {
@@ -558,6 +592,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
                     notifyingListeners = false;
                     return;
                 }
+                // 这里又继续去拿取监听器
                 listeners = this.listeners;
                 this.listeners = null;
             }
@@ -575,6 +610,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static void notifyListener0(Future future, GenericFutureListener l) {
         try {
+            // 监听器去执行这个任务， 参数为一个Future， 未来返回值
             l.operationComplete(future);
         } catch (Throwable t) {
             if (logger.isWarnEnabled()) {
@@ -587,8 +623,13 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         if (listeners == null) {
             listeners = listener;
         } else if (listeners instanceof DefaultFutureListeners) {
+            // 如果已经有了， 那么直接将新的这个监听器给添加进去
             ((DefaultFutureListeners) listeners).add(listener);
         } else {
+            // 到这里的话， 那么证明如下
+            // 1. listener就是ProgressListener
+            // 2. listener有值， 如果没有值的话， 在第一个就已经判定了
+            // 3. 使用数组来操作， 也是一个优化的地方
             listeners = new DefaultFutureListeners((GenericFutureListener<?>) listeners, listener);
         }
     }
@@ -601,6 +642,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         }
     }
 
+    // 设置成功了
     private boolean setSuccess0(V result) {
         return setValue0(result == null ? SUCCESS : result);
     }
@@ -609,14 +651,25 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         return setValue0(new CauseHolder(checkNotNull(cause, "cause")));
     }
 
+    /**
+     * 如果设置成功， 那么唤醒监听器
+     * setValue -> notifyListeners() -> notifyListenersNow
+     * @param objResult 结果
+     * @return 是否设置成功
+     */
     private boolean setValue0(Object objResult) {
+        // 当是null时， 去设置这个值
         if (RESULT_UPDATER.compareAndSet(this, null, objResult) ||
+                // 当是UNCANCELLABLE进行设置
             RESULT_UPDATER.compareAndSet(this, UNCANCELLABLE, objResult)) {
             if (checkNotifyWaiters()) {
+                // 唤配置监听者
                 notifyListeners();
             }
+            // 如果设置成功， 那么返回true
             return true;
         }
+        // 如果设置不成功， 那么返回false
         return false;
     }
 
@@ -626,11 +679,16 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
      */
     private synchronized boolean checkNotifyWaiters() {
         if (waiters > 0) {
+            // 如果有等待者的话， 立即唤起
+            // 这是一个native方法
             notifyAll();
         }
+        // 如果有的话， true
+        // 没有的话， false
         return listeners != null;
     }
 
+    // 这个方法， 之所以没有同步， 是因为调用他的方法， 都是已经加了synchronized的
     private void incWaiters() {
         if (waiters == Short.MAX_VALUE) {
             throw new IllegalStateException("too many waiters: " + this);
@@ -642,6 +700,8 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         --waiters;
     }
 
+    // 再次抛出异常
+    // 如果有异常， 那么再次抛出异常
     private void rethrowIfFailed() {
         Throwable cause = cause();
         if (cause == null) {
@@ -653,17 +713,21 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private boolean await0(long timeoutNanos, boolean interruptable) throws InterruptedException {
         if (isDone()) {
+            // 如果已经完成， 返回true
             return true;
         }
 
         if (timeoutNanos <= 0) {
+            // 直接返回， 是否完成
             return isDone();
         }
 
         if (interruptable && Thread.interrupted()) {
+            // 如果已经打断， 那么返回异常
             throw new InterruptedException(toString());
         }
 
+        // 检测死锁
         checkDeadLock();
 
         // Start counting time from here instead of the first line of this method,
@@ -673,17 +737,22 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             boolean interrupted = false;
             try {
                 long waitTime = timeoutNanos;
+                // 没有完成， 且等待时间>0
                 while (!isDone() && waitTime > 0) {
+                    // 等待者增加
                     incWaiters();
                     try {
+                        // 等待多长时间？
                         wait(waitTime / 1000000, (int) (waitTime % 1000000));
                     } catch (InterruptedException e) {
                         if (interruptable) {
                             throw e;
                         } else {
+                            // 如果出现异常， 那么就标记为， 已经打断
                             interrupted = true;
                         }
                     } finally {
+                        // 减少等待者
                         decWaiters();
                     }
                     // Check isDone() in advance, try to avoid calculating the elapsed time later.
@@ -697,6 +766,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
                 return isDone();
             } finally {
                 if (interrupted) {
+                    // 打断线程
                     Thread.currentThread().interrupt();
                 }
             }
@@ -781,6 +851,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
                     return null;
             }
 
+            // 遍历这些监听器， 找出来， 要的这种， 与进度有关的这种
             GenericFutureListener<?>[] array = dfl.listeners();
             GenericProgressiveFutureListener<?>[] copy = new GenericProgressiveFutureListener[progressiveSize];
             for (int i = 0, j = 0; j < progressiveSize; i ++) {
@@ -821,10 +892,12 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         }
     }
 
+    // 是否取消
     private static boolean isCancelled0(Object result) {
         return result instanceof CauseHolder && ((CauseHolder) result).cause instanceof CancellationException;
     }
 
+    // 判断是否有值
     private static boolean isDone0(Object result) {
         return result != null && result != UNCANCELLABLE;
     }
@@ -838,6 +911,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private static void safeExecute(EventExecutor executor, Runnable task) {
         try {
+            // 执行器去执行这个任务
             executor.execute(task);
         } catch (Throwable t) {
             rejectedExecutionLogger.error("Failed to submit a listener notification task. Event loop shut down?", t);
