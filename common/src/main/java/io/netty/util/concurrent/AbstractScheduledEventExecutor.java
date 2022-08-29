@@ -155,15 +155,21 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     /**
      * Return the {@link Runnable} which is ready to be executed with the given {@code nanoTime}.
      * You should use {@link #getCurrentTimeNanos()} to retrieve the correct {@code nanoTime}.
+     *
+     * 得到并移除截止时间大于nanoTime下一个调度任务
      */
     protected final Runnable pollScheduledTask(long nanoTime) {
+        // 在NioEventLoop中
         assert inEventLoop();
 
         // 得到一个任务
+        // scheduledTaskQueu拿取一个任务
         ScheduledFutureTask<?> scheduledTask = peekScheduledTask();
         if (scheduledTask == null || scheduledTask.deadlineNanos() - nanoTime > 0) {
+            // 如果已经超时了， 那么返回null
             return null;
         }
+        // 移除
         scheduledTaskQueue.remove();
         // 设置已经被消费了
         scheduledTask.setConsumed();
@@ -172,6 +178,8 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
 
     /**
      * Return the nanoseconds until the next scheduled task is ready to be run or {@code -1} if no task is scheduled.
+     *
+     * 取得 距离下一个调度任务执行的间隔时间
      */
     protected final long nextScheduledTaskNano() {
         ScheduledFutureTask<?> scheduledTask = peekScheduledTask();
@@ -294,13 +302,19 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
 
     private <V> ScheduledFuture<V> schedule(final ScheduledFutureTask<V> task) {
         if (inEventLoop()) {
+            // 原生线程直接向队列添加
             scheduleFromEventLoop(task);
         } else {
+            // 其它线程的话， 则提交一个添加调度任务的方法
+            // 任务的结束时间
             final long deadlineNanos = task.deadlineNanos();
             // task will add itself to scheduled task queue when run if not expired
+            // 死亡时间 < nextWakeupNanos == true
             if (beforeScheduledTaskSubmitted(deadlineNanos)) {
                 execute(task);
             } else {
+                // 死亡时间 > nextWakeupNanos == true
+                // 那么立即调用
                 lazyExecute(task);
                 // Second hook after scheduling to facilitate race-avoidance
                 if (afterScheduledTaskSubmitted(deadlineNanos)) {
@@ -312,6 +326,11 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
         return task;
     }
 
+    /**
+     * 删除一个调度任务
+     *
+     * @param task 调度任务
+     */
     final void removeScheduled(final ScheduledFutureTask<?> task) {
         assert task.isCancelled();
         if (inEventLoop()) {

@@ -270,6 +270,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
     private ChannelFuture doBind(final SocketAddress localAddress) {
         // 初始化并注册
+        // 注册时返回的一个Promise
         final ChannelFuture regFuture = initAndRegister();
         // 拿到这个SocketChannel
         final Channel channel = regFuture.channel();
@@ -281,11 +282,14 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
             doBind0(regFuture, channel, localAddress, promise);
+            // 这里返回的promise是不同的
             return promise;
         } else {
             // Registration future is almost always fulfilled already, but just in case it's not.
             final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
+            // 这里的这个promise， 是来自于注册时产生的
             // 这里添加一个回调方法
+            // register0(promise); -> 当注册成功后， 调用regFutrue的回调方法 -> 这里呢， 又返回了一个promise， -> 然后， 在main方法里又加入了一个litener -> 当这个新的promise绑定成功后， 又会调用这个新的listener
             regFuture.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
@@ -299,10 +303,12 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
                         // See https://github.com/netty/netty/issues/2586
                         promise.registered();
 
-                        doBind0(regFuture, channel, localAddress, promise);
+                        doBind0(regFuture, channel, localAddress, promise);// promise=PendingRegistrationPromise
                     }
                 }
             });
+            // 这里返回的promise是不同的
+            // 然后呢， 这里的这个promise是一个新的， 新建的
             return promise;
         }
     }
@@ -332,6 +338,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         // MultithreadEventLoopGroup
         // next()去选择一个线程
         // 返回一个提前返回的未来对象
+        // 这里拿到的bossGroup
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
@@ -365,7 +372,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             @Override
             public void run() {
                 if (regFuture.isSuccess()) {
-                    channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                    channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);// 这里是， 当关闭的时候， 就会关闭, promise=PendingRegistrationPromise
                 } else {
                     promise.setFailure(regFuture.cause());
                 }

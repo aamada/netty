@@ -103,8 +103,11 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, EventExecutor executor,
                                   String name, Class<? extends ChannelHandler> handlerClass) {
+        // 名称
         this.name = ObjectUtil.checkNotNull(name, "name");
+        // 链
         this.pipeline = pipeline;
+        // 为null
         this.executor = executor;
         this.executionMask = mask(handlerClass);
         // Its ordered if its driven by the EventLoop or the given Executor is an instanceof OrderedEventExecutor.
@@ -129,6 +132,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     @Override
     public EventExecutor executor() {
         if (executor == null) {
+            // 其实， 这里的executor为null， 它可以从channel中拿到一个执行器
             return channel().eventLoop();
         } else {
             return executor;
@@ -147,8 +151,10 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     static void invokeChannelRegistered(final AbstractChannelHandlerContext next) {
+        // 得到执行器
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
+            // 如果这个线程是此EventLoop
             next.invokeChannelRegistered();
         } else {
             executor.execute(new Runnable() {
@@ -932,8 +938,12 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     final void callHandlerAdded() throws Exception {
-        // We must call setAddComplete before calling handlerAdded. Otherwise if the handlerAdded method generates
-        // any pipeline events ctx.handler() will miss them because the state will not allow it.
+        // 我们必须在调用handlerAdded之前， 调用setAddComplete方法
+        // 否则， handlerAdded方法产生处理链的事件， ctx.handler()会丢失它们， 因为状态不允许
+        // We must call setAddComplete before calling handlerAdded.
+        // Otherwise if the handlerAdded method generates
+        // any pipeline events ctx.handler() will miss them
+        // because the state will not allow it.
         if (setAddComplete()) {
             handler().handlerAdded(this);
         }

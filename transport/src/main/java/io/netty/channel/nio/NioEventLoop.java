@@ -59,12 +59,22 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NioEventLoop.class);
 
+    // 是一个硬编码， 但是并不需要客户化
     private static final int CLEANUP_INTERVAL = 256; // XXX Hard-coded value, but won't need customization.
 
+    /**
+     * 是否禁用SelectKey的优化， 默认开启
+     */
     private static final boolean DISABLE_KEY_SET_OPTIMIZATION =
             SystemPropertyUtil.getBoolean("io.netty.noKeySetOptimization", false);
 
+    /**
+     * 少于该N值， 不开启空轮询重建新的Selector对象功能
+     */
     private static final int MIN_PREMATURE_SELECTOR_RETURNS = 3;
+    /**
+     * Nio Selector空轮询该N次后， 重建新的Selector对象
+     */
     private static final int SELECTOR_AUTO_REBUILD_THRESHOLD;
 
     private final IntSupplier selectNowSupplier = new IntSupplier() {
@@ -218,6 +228,8 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         // 一个集合哦， 还给封装起来了
         final SelectedSelectionKeySet selectedKeySet = new SelectedSelectionKeySet();
 
+        // 这里是一个优化点， 为什么一个新的连接过来时， 会使用到netty的这个集合呢？
+        // 就是这里使用反射将集合给java的设置进去
         Object maybeException = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
             public Object run() {
@@ -508,6 +520,11 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
     }
 
+    /**
+     * 轮询Channel选择就绪的IO事件
+     * 处理就绪的IO事件
+     * 处理任务队列中的普通任务（包含调度任务）
+     */
     @Override
     protected void run() {
         int selectCnt = 0;
@@ -515,11 +532,14 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             try {
                 int strategy;
                 try {
+                    // 选择策略
                     strategy = selectStrategy.calculateStrategy(selectNowSupplier, hasTasks());
                     switch (strategy) {
                     case SelectStrategy.CONTINUE:
+                        // 默认情况下， 不会有这种情况
                         continue;
 
+                        // -3
                     case SelectStrategy.BUSY_WAIT:
                         // fall-through to SELECT since the busy-wait is not supported with NIO
 
@@ -558,19 +578,23 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 if (ioRatio == 100) {
                     try {
                         if (strategy > 0) {
+                            // 处理channel感兴趣的就绪的IO事件
                             processSelectedKeys();
                         }
                     } finally {
                         // Ensure we always run tasks.
+                        // 运行普通的任务
                         ranTasks = runAllTasks();
                     }
                 } else if (strategy > 0) {
                     final long ioStartTime = System.nanoTime();
                     try {
+                        // 处理channel感兴趣的就绪的IO事件
                         processSelectedKeys();
                     } finally {
                         // Ensure we always run tasks.
                         final long ioTime = System.nanoTime() - ioStartTime;
+                        // 运行普通的任务
                         ranTasks = runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                     }
                 } else {
@@ -719,7 +743,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
     }
 
-    private void processSelectedKeysOptimized() {
+    private void processSelectedKeysOptimized() {// 这里的SocketChannel是怎么来的呢？
         for (int i = 0; i < selectedKeys.size; ++i) {
             final SelectionKey k = selectedKeys.keys[i];
             // null out entry in the array to allow to have it GC'ed once the Channel close
@@ -729,7 +753,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             final Object a = k.attachment();
 
             if (a instanceof AbstractNioChannel) {
-                processSelectedKey(k, (AbstractNioChannel) a);
+                processSelectedKey(k, (AbstractNioChannel) a);// key = SelectionKeyImpl, a = NioSocketChannel
             } else {
                 @SuppressWarnings("unchecked")
                 NioTask<SelectableChannel> task = (NioTask<SelectableChannel>) a;
@@ -748,8 +772,10 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     }
 
     private void processSelectedKey(SelectionKey k, AbstractNioChannel ch) {
+        // 一个ch = Channel, k = SelectionKey, unsafe=NioByteUnsafe, 它就是新建这个通道时， 创建的
         final AbstractNioChannel.NioUnsafe unsafe = ch.unsafe();
         if (!k.isValid()) {
+            // 这个键不再有效
             final EventLoop eventLoop;
             try {
                 eventLoop = ch.eventLoop();
@@ -765,22 +791,26 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             // See https://github.com/netty/netty/issues/5125
             if (eventLoop == this) {
                 // close the channel if the key is not valid anymore
+                // 将这个给关掉
                 unsafe.close(unsafe.voidPromise());
             }
             return;
         }
 
         try {
+            // 感兴趣的事件
             int readyOps = k.readyOps();
             // We first need to call finishConnect() before try to trigger a read(...) or write(...) as otherwise
             // the NIO JDK channel implementation may throw a NotYetConnectedException.
+            // 客户连接事件
             if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
                 // remove OP_CONNECT as otherwise Selector.select(..) will always return without blocking
-                // See https://github.com/netty/netty/issues/924
+                // See https://github.com/netty/netty/issues/924 下一次走这里
                 int ops = k.interestOps();
                 ops &= ~SelectionKey.OP_CONNECT;
+                // 连接完成后客户端除了连接事件都感兴趣
                 k.interestOps(ops);
-
+                // 完成连接
                 unsafe.finishConnect();
             }
 
@@ -793,7 +823,8 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             // Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead
             // to a spin loop
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
-                unsafe.read();
+                // NioMessageUnsafe去处理连接事件
+                unsafe.read();//NioSocketChannel$NioSocketChannelUnsafe, NioByteUnsafe 一个新的连接， 第一次走这里
             }
         } catch (CancelledKeyException ignored) {
             unsafe.close(unsafe.voidPromise());

@@ -135,6 +135,10 @@ final class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledFu
         }
     }
 
+    /**
+     * executor
+     * DefaultPriorityQueue
+     */
     @Override
     public void run() {
         assert executor().inEventLoop();
@@ -142,8 +146,11 @@ final class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledFu
             if (delayNanos() > 0L) {
                 // Not yet expired, need to add or remove from queue
                 if (isCancelled()) {
+                    // 如果已经取消的话， 那么把这个任务移除掉
                     scheduledExecutor().scheduledTaskQueue().removeTyped(this);
                 } else {
+                    // 如果还没有到时间的话
+                    // 如果没有取消的话， 那么重新加入进来
                     scheduledExecutor().scheduleFromEventLoop(this);
                 }
                 return;
@@ -151,19 +158,23 @@ final class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledFu
             if (periodNanos == 0) {
                 if (setUncancellableInternal()) {
                     V result = runTask();
+                    // 调用后， 回调方法
                     setSuccessInternal(result);
                 }
             } else {
                 // check if is done as it may was cancelled
                 if (!isCancelled()) {
+                    // 运行任务
                     runTask();
                     if (!executor().isShutdown()) {
+                        // 没有关闭的各方面
                         if (periodNanos > 0) {
                             deadlineNanos += periodNanos;
                         } else {
                             deadlineNanos = scheduledExecutor().getCurrentTimeNanos() - periodNanos;
                         }
                         if (!isCancelled()) {
+                            // 没有取消的话， 那么继续将这个任务重新添加至队列中去
                             scheduledExecutor().scheduledTaskQueue().add(this);
                         }
                     }

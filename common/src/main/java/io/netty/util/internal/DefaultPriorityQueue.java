@@ -136,8 +136,18 @@ public final class DefaultPriorityQueue<T extends PriorityQueueNode> extends Abs
         return removeTyped(node);
     }
 
+    /**
+     * 删除队列中的一个对象
+     * 1. 得到这个节点的索引
+     * 2. size--
+     * 3. 将这个位置的对象置为null
+     *
+     * @param node 节点
+     * @return
+     */
     @Override
     public boolean removeTyped(T node) {
+        // 索引
         int i = node.priorityQueueIndex(this);
         if (!contains(node, i)) {
             return false;
@@ -156,6 +166,7 @@ public final class DefaultPriorityQueue<T extends PriorityQueueNode> extends Abs
         // priorityQueueIndex will be updated below in bubbleUp or bubbleDown
 
         // Make sure the moved node still preserves the min-heap properties.
+        // 移动节点, 就像堆， 移除掉一个节点后， 重新建立这颗树
         if (comparator.compare(node, moved) < 0) {
             bubbleDown(i, moved);
         } else {

@@ -72,9 +72,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         this.parent = parent;
         // 这个channel有一个唯一 的id
         id = newId();
-        // NioMessageUnsafe
+        // 如果是服务端=NioMessageUnsafe, 如果是客户端=AbstractNioUnsafe=NioByteUnsafe
         unsafe = newUnsafe();
         // 新建一个处理器链， 还拥有自己
+        // DefaultChannelPipeline
         pipeline = newChannelPipeline();
     }
 
@@ -464,6 +465,11 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             return remoteAddress0();
         }
 
+        /**
+         * 将一个新的SocketChannel给注册到EventLoop中去
+         * @param eventLoop
+         * @param promise
+         */
         @Override
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
             ObjectUtil.checkNotNull(eventLoop, "eventLoop");
@@ -483,6 +489,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 register0(promise);
             } else {
                 try {
+                    // 它的实现是将任务放入至一个集合中去， 待线程执行到， 去执行这个集合里的任务时， 执行
                     eventLoop.execute(new Runnable() {
                         @Override
                         public void run() {
@@ -500,6 +507,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
         }
 
+        // 真的去注册， NioServerSocketChannel
         private void register0(ChannelPromise promise) {
             try {
                 // check if the channel is still open as it could be closed in the mean time when the register
@@ -512,16 +520,25 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 neverRegistered = false;
                 registered = true;
 
+
+                // add -> registered -> active -> read
+
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
+                // 确保我们先调用 handlerAdd() -> notify promise
                 // user may already fire events through the pipeline in the ChannelFutureListener.
+                // add
+                // 如果一些handler在注册前， 已经添加到pipeline中的话， 那么它是没有真的添加到pipeline中去的
+                // 它那个时候的添加是挂起来的， 要等着这个时间， 我们再去调用， 才会真的添加到pipiline中去head -> tail
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
+                // registered
                 pipeline.fireChannelRegistered();
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {
                     if (firstRegistration) {
+                        // active
                         pipeline.fireChannelActive();
                     } else if (config().isAutoRead()) {
                         // This channel was registered before and autoRead() is set. This means we need to begin read
@@ -570,7 +587,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             if (!wasActive && isActive()) {
-                invokeLater(new Runnable() {
+                invokeLater(new Runnable() {//一会再调用
                     @Override
                     public void run() {
                         pipeline.fireChannelActive();
@@ -578,7 +595,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 });
             }
 
-            safeSetSuccess(promise);
+            safeSetSuccess(promise);// 这里又给其设置为true， 然后呢， 就会去回调他的回调方法, promise=PendingRegistrationPromise, 这里调用完后， 就会去调用main方法添加的那个回调方法了
         }
 
         @Override
@@ -1024,7 +1041,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 //         -> handlerA.channelInactive() - (2) another inbound handler method called while in (1) yet
                 //
                 // which means the execution of two inbound handler methods of the same handler overlap undesirably.
-                eventLoop().execute(task);
+                eventLoop().execute(task);//这里的实现， 是将这个task放入至一个集合中去
             } catch (RejectedExecutionException e) {
                 logger.warn("Can't invoke task later as EventLoop rejected it", e);
             }

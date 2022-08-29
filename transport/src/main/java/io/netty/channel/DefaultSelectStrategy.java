@@ -27,6 +27,8 @@ final class DefaultSelectStrategy implements SelectStrategy {
 
     @Override
     public int calculateStrategy(IntSupplier selectSupplier, boolean hasTasks) throws Exception {
+        // selectSupplier.get() select.selectNow()
+        // -1
         return hasTasks ? selectSupplier.get() : SelectStrategy.SELECT;
     }
 }

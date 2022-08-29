@@ -132,7 +132,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
         }
 
         @Override
-        public final void read() {
+        public final void read() {// 读事件
             final ChannelConfig config = config();
             if (shouldBreakReadReady(config)) {
                 clearReadPending();

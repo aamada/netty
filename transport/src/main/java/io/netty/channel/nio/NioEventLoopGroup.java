@@ -165,6 +165,22 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
         }
     }
 
+    /**
+     *
+     * select提供者
+     * 选择策略工厂
+     * 拒绝策略
+     * 两个队列
+     *
+     * executor=ThreadPerTaskExecutor
+     *
+     * 新建一个NioEventLoop
+     *
+     * @param executor ThreadPerTaskExecutor
+     * @param args 参数
+     * @return EventLoop
+     * @throws Exception exception
+     */
     @Override
     protected EventLoop newChild(Executor executor, Object... args) throws Exception {
         // 前面的provider

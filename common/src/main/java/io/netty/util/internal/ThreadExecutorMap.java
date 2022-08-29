@@ -54,6 +54,8 @@ public final class ThreadExecutorMap {
         return new Executor() {
             @Override
             public void execute(final Runnable command) {
+                // ThreadPerTaskExecutor
+                // 这个executor就是新建NioEventLoop时， 在其父类， 传递过来的一个ThreadPerTaskExecutor
                 executor.execute(apply(command, eventExecutor));
             }
         };

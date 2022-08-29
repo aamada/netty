@@ -73,6 +73,16 @@ import java.net.SocketAddress;
  * It is important to call {@link #close()} or {@link #close(ChannelPromise)} to release all
  * resources once you are done with the {@link Channel}. This ensures all resources are
  * released in a proper way, i.e. filehandles.
+ *
+ * Channel是Netty网络操作抽象类， 它除了包括基本的IO操作， bind， connect， read， write之外， 还包括了
+ * Netty框架相关的一些功能， 如获取Channel的EventLoop
+ *
+ * 在Channel接口层， 采用Facade模式进行统一封装， 将网络IO操作， 网络IO相关联的其他操作封装起来， 统一对外提供
+ *
+ * Channel接口的定义尽量大而全， 为SocketChannel和ServerSocketChannel提供统一的视图， 由不同子类实现不同的功能
+ * 公共功能在抽象父类中实现， 最大程度的实现功能和接口的重用；
+ *
+ * 具体实现采用聚合而非包含的方式， 将相关的功能类聚合在Channel中， 由Channel统一负责和调度， 功能实现更加灵活
  */
 public interface Channel extends AttributeMap, ChannelOutboundInvoker, Comparable<Channel> {
 
@@ -149,6 +159,8 @@ public interface Channel extends AttributeMap, ChannelOutboundInvoker, Comparabl
     /**
      * Returns the {@link ChannelFuture} which will be notified when this
      * channel is closed.  This method always returns the same future instance.
+     *
+     * Channel关闭的Future对象
      */
     ChannelFuture closeFuture();
 
@@ -174,6 +186,8 @@ public interface Channel extends AttributeMap, ChannelOutboundInvoker, Comparabl
 
     /**
      * Returns an <em>internal-use-only</em> object that provides unsafe operations.
+     *
+     * 一些任务， 就是委派给这个类去实现的
      */
     Unsafe unsafe();
 
@@ -184,6 +198,8 @@ public interface Channel extends AttributeMap, ChannelOutboundInvoker, Comparabl
 
     /**
      * Return the assigned {@link ByteBufAllocator} which will be used to allocate {@link ByteBuf}s.
+     *
+     * ByteBuf分配器
      */
     ByteBufAllocator alloc();
 

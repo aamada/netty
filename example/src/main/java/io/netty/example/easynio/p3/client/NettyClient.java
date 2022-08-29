@@ -36,6 +36,7 @@ public class NettyClient {
     private static void connect(Bootstrap bootstrap, String host, int port, int maxRetry) {
         bootstrap.connect(host, port)
                 .addListener(future -> {
+                    // 连接成功后的第一个回调事件， 居然是这里
                    if (future.isSuccess()) {
                        System.err.println("连接成功");
                    } else if (maxRetry == 0) {

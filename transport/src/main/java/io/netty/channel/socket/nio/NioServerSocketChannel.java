@@ -97,6 +97,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     public NioServerSocketChannel(ServerSocketChannel channel) {
         // 一个ServerSocketChannel, 一个接收事件
         // AbstractNioMessageChannel
+        // ServerSocketChannel
         super(null, channel, SelectionKey.OP_ACCEPT);
         // javaChannel获取到的其实就是channel， 就是刚才才新建一个ServerSocketChannel
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());
@@ -156,7 +157,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
     @Override
     protected int doReadMessages(List<Object> buf) throws Exception {
-        SocketChannel ch = SocketUtils.accept(javaChannel());
+        SocketChannel ch = SocketUtils.accept(javaChannel());// 这个channel， 就是服务端的NioServerSocketChannel
 
         try {
             if (ch != null) {

@@ -56,10 +56,15 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final InternalLogger logger =
             InternalLoggerFactory.getInstance(SingleThreadEventExecutor.class);
 
+    // 没有启动
     private static final int ST_NOT_STARTED = 1;
+    // 启动
     private static final int ST_STARTED = 2;
+    // 正在关闭
     private static final int ST_SHUTTING_DOWN = 3;
+    // 关闭
     private static final int ST_SHUTDOWN = 4;
+    // 终止
     private static final int ST_TERMINATED = 5;
 
     private static final Runnable NOOP_TASK = new Runnable() {
@@ -75,20 +80,35 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             AtomicReferenceFieldUpdater.newUpdater(
                     SingleThreadEventExecutor.class, ThreadProperties.class, "threadProperties");
 
+    /**
+     * 任务队列
+     */
     private final Queue<Runnable> taskQueue;
 
+    /**
+     * 与其进行绑定的线程
+     */
     private volatile Thread thread;
+    /**
+     * 线程属性
+     */
     @SuppressWarnings("unused")
     private volatile ThreadProperties threadProperties;
+    // ThreadPerTaskExecutor
     private final Executor executor;
+    // 打断
     private volatile boolean interrupted;
 
     private final CountDownLatch threadLock = new CountDownLatch(1);
     private final Set<Runnable> shutdownHooks = new LinkedHashSet<Runnable>();
+    // 添加任务时， 是否唤醒线程
     private final boolean addTaskWakesUp;
+    // 任务队列大小即未执行的最大任务数
     private final int maxPendingTasks;
+    // 队列满时， 拒绝器
     private final RejectedExecutionHandler rejectedExecutionHandler;
 
+    // 上一次执行时间
     private long lastExecutionTime;
 
     @SuppressWarnings({ "FieldMayBeFinal", "unused" })
@@ -213,6 +233,10 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     /**
      * @see Queue#poll()
+     *
+     * 拉取任务
+     *
+     * 取得并移除任务队列的头部任务， 忽略WAKE_TASK标记任务
      */
     protected Runnable pollTask() {
         assert inEventLoop();
@@ -221,6 +245,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     protected static Runnable pollTaskFrom(Queue<Runnable> taskQueue) {
         for (;;) {
+            // 从队列中拿取任务
             Runnable task = taskQueue.poll();
             if (task != WAKEUP_TASK) {
                 return task;
@@ -245,8 +270,10 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
         BlockingQueue<Runnable> taskQueue = (BlockingQueue<Runnable>) this.taskQueue;
         for (;;) {
+            // 取得调度任务队列的头部任务， 注意peek并不移除
             ScheduledFutureTask<?> scheduledTask = peekScheduledTask();
             if (scheduledTask == null) {
+                // 没有调度任务
                 Runnable task = null;
                 try {
                     task = taskQueue.take();
@@ -258,10 +285,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 }
                 return task;
             } else {
+                // 调度任务的到期时间间隔
                 long delayNanos = scheduledTask.delayNanos();
                 Runnable task = null;
                 if (delayNanos > 0) {
                     try {
+                        // 调度任务未到期， 刚从任务队列取一个任务， 可能为null
                         task = taskQueue.poll(delayNanos, TimeUnit.NANOSECONDS);
                     } catch (InterruptedException e) {
                         // Waken up.
@@ -273,6 +302,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                     // scheduled tasks are never executed if there is always one task in the taskQueue.
                     // This is for example true for the read task of OIO Transport
                     // See https://github.com/netty/netty/issues/1614
+                    // 注意这里执行有两种情况
+                    // 1. 任务队列中没有待执行任务
+                    // 2. 调度任务已到期
                     fetchFromScheduledTaskQueue();
                     task = taskQueue.poll();
                 }
@@ -326,6 +358,10 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     /**
      * @see Queue#peek()
+     *
+     * 取得任务队列的头部任务
+     *
+     * peek这里不用移除任务
      */
     protected Runnable peekTask() {
         assert inEventLoop();
@@ -334,6 +370,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     /**
      * @see Queue#isEmpty()
+     * 是否有任务
      */
     protected boolean hasTasks() {
         assert inEventLoop();
@@ -341,6 +378,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     /**
+     * 挂起的任务， 其实就是队列里的任务
      * Return the number of tasks that are pending for processing.
      */
     public int pendingTasks() {
@@ -354,19 +392,23 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     protected void addTask(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
         if (!offerTask(task)) {
+            // 添加不成功， 那么拒绝
             reject(task);
         }
     }
 
+    // 添加一个任务， 线程关闭时， 抛出异常
     final boolean offerTask(Runnable task) {
         if (isShutdown()) {
             reject();
         }
+        // 添加进去
         return taskQueue.offer(task);
     }
 
     /**
      * @see Queue#remove(Object)
+     * 移除一个任务
      */
     protected boolean removeTask(Runnable task) {
         return taskQueue.remove(ObjectUtil.checkNotNull(task, "task"));
@@ -518,6 +560,8 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     /**
      * Returns the amount of time left until the scheduled task with the closest dead line is executed.
+     *
+     * 下一个调度任务到期的时间间隔
      */
     protected long delayNanos(long currentTimeNanos) {
         currentTimeNanos -= initialNanoTime();
@@ -570,6 +614,8 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (!inEventLoop) {
             // Use offer as we actually only need this to unblock the thread and if offer fails we do not care as there
             // is already something in the queue.
+            // 非本类原生线程或者本类原生线程需要关闭时， 添加一个标记任务使线程从take()返回
+            // offer失败表明任务队列已经有任务， 从而线程可以从take()返回的不处理
             taskQueue.offer(WAKEUP_TASK);
         }
     }
@@ -851,6 +897,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void execute0(@Schedule Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
+        // 不是延迟任务 并且 为了任务唤醒true， 那么这个值就是true
         execute(task, !(task instanceof LazyRunnable) && wakesUpForTask(task));
     }
 
@@ -859,13 +906,17 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     private void execute(Runnable task, boolean immediate) {
+        // 当前是否在EventLoop的线程中
         boolean inEventLoop = inEventLoop();
+        // 添加到队列中
         addTask(task);
         if (!inEventLoop) {
+            // 创建线程
             startThread();
             if (isShutdown()) {
                 boolean reject = false;
                 try {
+                    // 移除任务
                     if (removeTask(task)) {
                         reject = true;
                     }
@@ -880,6 +931,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             }
         }
 
+        // 是否唤醒线程？addTaskWakeUp由构造方法配置， wakesUpForTask()可由子类覆盖， 默认唤醒
+        // 这里这个参数值addTaskWakeUp和其说明有出入， 现在false而唤醒？
+        // addTaskWakesUp = false,
+        // layzExecutor时， immediate=false
+        // 其实现在只要不是延迟任务， 那么就是立即执行
         if (!addTaskWakesUp && immediate) {
             wakeup(inEventLoop);
         }
@@ -976,6 +1032,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void startThread() {
         if (state == ST_NOT_STARTED) {
+            // 开始线程
             if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
                 boolean success = false;
                 try {
@@ -1013,14 +1070,17 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         executor.execute(new Runnable() {
             @Override
             public void run() {
+                // 记录当前线程
                 thread = Thread.currentThread();
                 if (interrupted) {
                     thread.interrupt();
                 }
 
                 boolean success = false;
+                // 更新最后执行时间
                 updateLastExecutionTime();
                 try {
+                    // 执行任务
                     SingleThreadEventExecutor.this.run();
                     success = true;
                 } catch (Throwable t) {

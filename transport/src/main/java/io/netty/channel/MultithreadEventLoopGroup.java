@@ -75,20 +75,34 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
 
     @Override
     public EventLoop next() {
+        // 使用它爹的选择器， 去线程池里去选择一个线程
         return (EventLoop) super.next();
     }
 
     @Override
     protected abstract EventLoop newChild(Executor executor, Object... args) throws Exception;
 
+    /**
+     * 将通道channel注册到EventLoopGroup中的一个线程上
+     *
+     * @param channel 一个Channel
+     * @return Promise
+     */
     @Override
     public ChannelFuture register(Channel channel) {
         // 选择一个线程进行注册
         return next().register(channel);
     }
 
+    /**
+     * 返回的channelFuture为传入的ChannelPromise
+     *
+     * @param promise channelPromise
+     * @return promise
+     */
     @Override
     public ChannelFuture register(ChannelPromise promise) {
+        // 返回的还是promise
         return next().register(promise);
     }
 

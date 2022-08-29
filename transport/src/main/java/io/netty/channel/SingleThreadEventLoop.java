@@ -82,6 +82,8 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
     public ChannelFuture register(Channel channel) {
         // 你看在这里进行注册的时候， 新建了一个提前返回的对象
         // promise里有channel， 有线程
+        // channel -> NioServerSocketChannel
+        // this -> EventLoop
         return register(new DefaultChannelPromise(channel, this));
     }
 

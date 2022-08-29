@@ -50,8 +50,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     private static final InternalLogger logger =
             InternalLoggerFactory.getInstance(AbstractNioChannel.class);
 
+    // ServerSocketChannel
     private final SelectableChannel ch;
+    // 感兴趣的事件
     protected final int readInterestOp;
+    // 注册后， 生成的一个selectKey
     volatile SelectionKey selectionKey;
     boolean readPending;
     private final Runnable clearReadPendingRunnable = new Runnable() {
@@ -79,6 +82,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         super(parent);
         // channel
+        // ServerSocketChannel
         this.ch = ch;
         // 接收事件
         this.readInterestOp = readInterestOp;
@@ -269,7 +273,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                             }
                         }, connectTimeoutMillis, TimeUnit.MILLISECONDS);
                     }
-
+                    // 连接成功后， 走的是这里
                     promise.addListener(new ChannelFutureListener() {
                         @Override
                         public void operationComplete(ChannelFuture future) throws Exception {
@@ -380,6 +384,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         boolean selected = false;
         for (;;) {
             try {
+                // 将channel给注册到选择器上
+                // 这里还有就是， NioServerSocketChannel是作为attachment作为附件的
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {

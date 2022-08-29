@@ -59,15 +59,26 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
         return allocHandle.continueReading();
     }
 
+    // 处理连接事件
     private final class NioMessageUnsafe extends AbstractNioUnsafe {
 
         private final List<Object> readBuf = new ArrayList<Object>();
 
+        /**
+         * 1. 服务端NioServerSocketChannel的boss EventLoop线程轮询是否有新的客户端连接接入
+         * 2. 当轮询到有新的连接接入， 封装接入的客户端的SocketChannel为
+         * Netty NioServerChannel对象；
+         * 3. 选择一个服务端NioServerSocketChanel的worker EventLoop，
+         * 将客户端的NioSocketChannel注册到其上， 并且，
+         *  注册客户端的NioSocketChannel的读事件， 开始
+         * 轮询该客户端是否有数据写入。
+         */
         @Override
         public void read() {
-            assert eventLoop().inEventLoop();
-            final ChannelConfig config = config();
-            final ChannelPipeline pipeline = pipeline();
+            assert eventLoop().inEventLoop();// 线程
+            final ChannelConfig config = config();// 配置
+            final ChannelPipeline pipeline = pipeline();// 新建channel时， 就会有一个默认的链, DefaultChannelPipeline
+            // 分配循环使用的ByteBuf分配对象
             final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
             allocHandle.reset(config);
 
@@ -76,31 +87,44 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
             try {
                 try {
                     do {
+                        // 1. 就是去创建一个新的NioSocketChannel
+                        // NioSocketChannel
+                        // 读取客户端的连接到readBuf中
                         int localRead = doReadMessages(readBuf);
+                        // 无可读的客户端的连接， 结束
                         if (localRead == 0) {
                             break;
                         }
                         if (localRead < 0) {
+                            // 读取出错
                             closed = true;
                             break;
                         }
 
+                        // 读取消息的数量 + localRead
                         allocHandle.incMessagesRead(localRead);
                     } while (continueReading(allocHandle));
                 } catch (Throwable t) {
                     exception = t;
                 }
 
+                // NioSocketChannel
                 int size = readBuf.size();
                 for (int i = 0; i < size; i ++) {
+                    // 循环readBuf数组， 触发Channel read事件到pipeLine中
                     readPending = false;
+                    // 触发读事件
                     pipeline.fireChannelRead(readBuf.get(i));
                 }
+                // 清空
                 readBuf.clear();
+                // 读取完成
                 allocHandle.readComplete();
+                // 触发完成读事件
                 pipeline.fireChannelReadComplete();
 
                 if (exception != null) {
+                    // 如果有异常
                     closed = closeOnReadError(exception);
 
                     pipeline.fireExceptionCaught(exception);

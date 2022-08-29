@@ -52,7 +52,7 @@ public interface ChannelFutureListener extends GenericFutureListener<ChannelFutu
     ChannelFutureListener CLOSE_ON_FAILURE = new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) {
-            if (!future.isSuccess()) {
+            if (!future.isSuccess()) {// 连接成功后， 第三个回调的地方
                 future.channel().close();
             }
         }

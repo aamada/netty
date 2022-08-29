@@ -152,6 +152,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                     pipeline.addLast(handler);
                 }
 
+                // 这里将任务给放到了EventLoop线程里去执行了
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
@@ -205,17 +206,23 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             };
         }
 
+        /**
+         * 当有一个新的连接过来时， 先经过HeadContext -> ServerBootstrap#read
+         * @param ctx
+         * @param msg
+         */
         @Override
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            // NioSocketChannel
             final Channel child = (Channel) msg;
 
-            child.pipeline().addLast(childHandler);
+            child.pipeline().addLast(childHandler);// NioSocketChannel的处理器链新增处理器
 
             setChannelOptions(child, childOptions, logger);
             setAttributes(child, childAttrs);
 
-            try {
+            try {// 这个childGroup就是一个线程池， worker线程池
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
