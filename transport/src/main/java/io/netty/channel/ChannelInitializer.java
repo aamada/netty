@@ -104,6 +104,14 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
 
     /**
      * {@inheritDoc} If override this method ensure you call super!
+     *
+     * 诶？怎么这里又调用了 #initChannel(ChannelHandlerContext ctx) 方法，初始化 Channel 呢？实际上，绝绝绝大多数情况下，因为 Channel Registered
+     * 事件触发在 Added 之后，如果说在 #handlerAdded(ChannelHandlerContext ctx) 方法中，初始化 Channel 完成，那么 ChannelInitializer 便会从 pipeline
+     * 中移除。也就说，不会执行 #channelRegistered(ChannelHandlerContext ctx) 方法。
+     * ↑↑↑ 上面这段话听起来非常绕噢。简单来说，ChannelInitializer 调用 #initChannel(ChannelHandlerContext ctx) 方法，初始化 Channel 的调用来源，是来
+     * 自 #handlerAdded(...) 方法，而不是 #channelRegistered(...) 方法。
+     * 还是不理解？胖友在 #handlerAdded(ChannelHandlerContext ctx) 方法上打上“断点”，并调试启动 io.netty.example.echo.EchoServer ，就能触发
+     * 这种情况。原因是什么呢？如下图所示：
      */
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
@@ -135,6 +143,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
                 // We do so to prevent multiple calls to initChannel(...).
                 exceptionCaught(ctx, cause);
             } finally {
+                // 添加完成后， 将自己给删除掉， 这里就是NettyServer中写的那个ChannelInitial
                 if (!ctx.isRemoved()) {
                     ctx.pipeline().remove(this);
                 }

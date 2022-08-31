@@ -529,6 +529,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 // add
                 // 如果一些handler在注册前， 已经添加到pipeline中的话， 那么它是没有真的添加到pipeline中去的
                 // 它那个时候的添加是挂起来的， 要等着这个时间， 我们再去调用， 才会真的添加到pipiline中去head -> tail
+                // 前面已经将那个NettyServer的ChannelInitial， 给添加到了pipeline中去了
+                // 所以这里会调用到io.netty.channel.ChannelInitializer.handlerAdded的方法
+                // 调用完成后， 会将这个NettyServer的ChannelInitializer给移除掉
+                // 所以下面的， 第三行代码， 就执行不到io.netty.channel.ChannelInitializer.channelRegistered这个方法了
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
