@@ -26,6 +26,10 @@ import io.netty.util.internal.ReferenceCountUpdater;
 public abstract class AbstractReferenceCountedByteBuf extends AbstractByteBuf {
     private static final long REFCNT_FIELD_OFFSET =
             ReferenceCountUpdater.getUnsafeOffset(AbstractReferenceCountedByteBuf.class, "refCnt");
+    /**
+     * 为什么不直接用AtomicInteger？因为ByteBuf对象很多， 如果都把int包一层AtomicInteger花销较大，
+     * 而AtomicintegerFieldUpdater只需要一个全局的静态变量
+     */
     private static final AtomicIntegerFieldUpdater<AbstractReferenceCountedByteBuf> AIF_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(AbstractReferenceCountedByteBuf.class, "refCnt");
 
@@ -41,12 +45,15 @@ public abstract class AbstractReferenceCountedByteBuf extends AbstractByteBuf {
         }
     };
 
+    // 引用计数
     // Value might not equal "real" reference count, all access should be via the updater
     @SuppressWarnings({"unused", "FieldMayBeFinal"})
     private volatile int refCnt;
 
     protected AbstractReferenceCountedByteBuf(int maxCapacity) {
+        // 设置最大的容量
         super(maxCapacity);
+        // 初始refCnt为1
         updater.setInitialValue(this);
     }
 

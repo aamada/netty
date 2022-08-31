@@ -78,9 +78,12 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
         if (initChannel(ctx)) {
             // we called initChannel(...) so we need to call now pipeline.fireChannelRegistered() to ensure we not
             // miss an event.
+            // 重新注册handler后， 我们重新去调用这个方法， 以免我们错失掉一些事件
             ctx.pipeline().fireChannelRegistered();
 
             // We are done with init the Channel, removing all the state for the Channel now.
+            // 我们已经初始化这个Channel后， 移除这个Channel的状态
+            // 这是什么鬼？这个ctx是那一个ctx?
             removeState(ctx);
         } else {
             // Called initChannel(...) before which is the expected behavior, so just forward the event.
@@ -144,6 +147,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     private void removeState(final ChannelHandlerContext ctx) {
         // The removal may happen in an async fashion if the EventExecutor we use does something funky.
         if (ctx.isRemoved()) {
+            // 移除这个ctx
             initMap.remove(ctx);
         } else {
             // The context is not removed yet which is most likely the case because a custom EventExecutor is used.

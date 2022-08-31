@@ -32,16 +32,21 @@ package io.netty.util;
 public interface ReferenceCounted {
     /**
      * Returns the reference count of this object.  If {@code 0}, it means this object has been deallocated.
+     *
+     * 获取引用计数
      */
     int refCnt();
 
     /**
      * Increases the reference count by {@code 1}.
+     * 增加引用计数
      */
     ReferenceCounted retain();
 
     /**
      * Increases the reference count by the specified {@code increment}.
+     *
+     * 增加引用计数n
      */
     ReferenceCounted retain(int increment);
 
@@ -49,6 +54,8 @@ public interface ReferenceCounted {
      * Records the current access location of this object for debugging purposes.
      * If this object is determined to be leaked, the information recorded by this operation will be provided to you
      * via {@link ResourceLeakDetector}.  This method is a shortcut to {@link #touch(Object) touch(null)}.
+     *
+     * 等人于调用touch(null)方法
      */
     ReferenceCounted touch();
 
@@ -56,12 +63,22 @@ public interface ReferenceCounted {
      * Records the current access location of this object with an additional arbitrary information for debugging
      * purposes.  If this object is determined to be leaked, the information recorded by this operation will be
      * provided to you via {@link ResourceLeakDetector}.
+     *
+     * 出于调度的目的， 用一个额外的任意的信息记录这个对象的当前访问地址
+     *
+     * 如果这个对象被检测泄漏了， 这个操作记录的信息将通过ResourceLeakDetector
+     *
+     * 展示给你
      */
     ReferenceCounted touch(Object hint);
 
     /**
      * Decreases the reference count by {@code 1} and deallocates this object if the reference count reaches at
      * {@code 0}.
+     *
+     * 减少引用计数1
+     *
+     * 当引用计数为0时， 释放
      *
      * @return {@code true} if and only if the reference count became {@code 0} and this object has been deallocated
      */
@@ -70,6 +87,10 @@ public interface ReferenceCounted {
     /**
      * Decreases the reference count by the specified {@code decrement} and deallocates this object if the reference
      * count reaches at {@code 0}.
+     *
+     * 减少引用计数n
+     *
+     * 当引用计数为0时， 释放
      *
      * @return {@code true} if and only if the reference count became {@code 0} and this object has been deallocated
      */

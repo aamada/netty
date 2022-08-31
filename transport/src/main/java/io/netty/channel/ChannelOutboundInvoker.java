@@ -204,6 +204,12 @@ public interface ChannelOutboundInvoker {
      * Request to write a message via this {@link ChannelHandlerContext} through the {@link ChannelPipeline}.
      * This method will not request to actual flush, so be sure to call {@link #flush()}
      * once you want to request to flush all pending data to the actual transport.
+     *
+     * 将数据写入至内存队列中
+     *
+     * 也就是说， 此时数据并没有写入到对端
+     *
+     * 从尾部开始写出数据
      */
     ChannelFuture write(Object msg);
 
@@ -211,16 +217,33 @@ public interface ChannelOutboundInvoker {
      * Request to write a message via this {@link ChannelHandlerContext} through the {@link ChannelPipeline}.
      * This method will not request to actual flush, so be sure to call {@link #flush()}
      * once you want to request to flush all pending data to the actual transport.
+     *
+     *
+     * 这个过程是异常的， 需要添加一个监听来判断， 是否完成写入
+     *
+     * 从尾部开始写出数据
      */
     ChannelFuture write(Object msg, ChannelPromise promise);
 
     /**
      * Request to flush all pending messages via this ChannelOutboundInvoker.
+     *
+     * 刷新队列内存， 将其中的数据写入到对端
+     *
+     * 此时数据才真正写到对端
+     *
+     * 从尾部开始写出数据
      */
     ChannelOutboundInvoker flush();
 
     /**
      * Shortcut for call {@link #write(Object, ChannelPromise)} and {@link #flush()}.
+     *
+     * write+flush的组合， 将数据写入到内存队列后， 立即刷新内存队列， 又将其中的数据写入到对端， 此时数据已经写入到对端
+     *
+     * 这个过程是异常的， 需要添加一个监听来判断， 是否完成写入
+     *
+     * 从尾部开始写出数据
      */
     ChannelFuture writeAndFlush(Object msg, ChannelPromise promise);
 

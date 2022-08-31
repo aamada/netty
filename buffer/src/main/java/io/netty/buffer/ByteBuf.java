@@ -249,6 +249,8 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
 
     /**
      * Returns the number of bytes (octets) this buffer can contain.
+     *
+     * 容量
      */
     public abstract int capacity();
 
@@ -258,6 +260,8 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
      * than the current capacity, the buffer is appended with unspecified data whose length is
      * {@code (newCapacity - currentCapacity)}.
      *
+     * 调整容量
+     *
      * @throws IllegalArgumentException if the {@code newCapacity} is greater than {@link #maxCapacity()}
      */
     public abstract ByteBuf capacity(int newCapacity);
@@ -265,17 +269,23 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
     /**
      * Returns the maximum allowed capacity of this buffer. This value provides an upper
      * bound on {@link #capacity()}.
+     *
+     * 最大容量
      */
     public abstract int maxCapacity();
 
     /**
      * Returns the {@link ByteBufAllocator} which created this buffer.
+     *
+     * 分配器, 用于创建ByteBuf对象
      */
     public abstract ByteBufAllocator alloc();
 
     /**
      * Returns the <a href="https://en.wikipedia.org/wiki/Endianness">endianness</a>
      * of this buffer.
+     *
+     * 字节序
      *
      * @deprecated use the Little Endian accessors, e.g. {@code getShortLE}, {@code getIntLE}
      * instead of creating a buffer with swapped {@code endianness}.
@@ -300,6 +310,8 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
     /**
      * Return the underlying buffer instance if this buffer is a wrapper of another buffer.
      *
+     * 返回被包装的对象
+     *
      * @return {@code null} if this buffer is not a wrapper
      */
     public abstract ByteBuf unwrap();
@@ -322,11 +334,15 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
 
     /**
      * Returns the {@code readerIndex} of this buffer.
+     *
+     * 读索引
      */
     public abstract int readerIndex();
 
     /**
      * Sets the {@code readerIndex} of this buffer.
+     *
+     * 设置read索引
      *
      * @throws IndexOutOfBoundsException
      *         if the specified {@code readerIndex} is
@@ -337,11 +353,15 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
 
     /**
      * Returns the {@code writerIndex} of this buffer.
+     *
+     * 写索引
      */
     public abstract int writerIndex();
 
     /**
      * Sets the {@code writerIndex} of this buffer.
+     *
+     * 设置写索引
      *
      * @throws IndexOutOfBoundsException
      *         if the specified {@code writerIndex} is
@@ -406,12 +426,16 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
     /**
      * Returns the number of readable bytes which is equal to
      * {@code (this.writerIndex - this.readerIndex)}.
+     *
+     * 剩余可读字节
      */
     public abstract int readableBytes();
 
     /**
      * Returns the number of writable bytes which is equal to
      * {@code (this.capacity - this.writerIndex)}.
+     *
+     * 可写字节
      */
     public abstract int writableBytes();
 
@@ -509,6 +533,8 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
      * to {@code 0} and {@code oldWriterIndex - oldReaderIndex} respectively.
      * <p>
      * Please refer to the class documentation for more detailed explanation.
+     *
+     * 释放已读的字节空间
      */
     public abstract ByteBuf discardReadBytes();
 
@@ -517,6 +543,8 @@ public abstract class ByteBuf implements ReferenceCounted, Comparable<ByteBuf>, 
      * some, all, or none of read bytes depending on its internal implementation to reduce
      * overall memory bandwidth consumption at the cost of potentially additional memory
      * consumption.
+     *
+     * 释放部分已读的字节空间
      */
     public abstract ByteBuf discardSomeReadBytes();
 

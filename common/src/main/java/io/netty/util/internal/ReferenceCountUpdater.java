@@ -127,7 +127,9 @@ public abstract class ReferenceCountUpdater<T extends ReferenceCounted> {
 
     // rawIncrement == increment << 1
     private T retain0(T instance, final int increment, final int rawIncrement) {
+        // 增加
         int oldRef = updater().getAndAdd(instance, rawIncrement);
+        // 原有refCnt就是<=0， 或者， increment为负数
         if (oldRef != 2 && oldRef != 4 && (oldRef & 1) != 0) {
             throw new IllegalReferenceCountException(0, increment);
         }
@@ -135,6 +137,7 @@ public abstract class ReferenceCountUpdater<T extends ReferenceCounted> {
         if ((oldRef <= 0 && oldRef + rawIncrement >= 0)
                 || (oldRef >= 0 && oldRef + rawIncrement < oldRef)) {
             // overflow case
+            // 加回去， 负负得正
             updater().getAndAdd(instance, -rawIncrement);
             throw new IllegalReferenceCountException(realRefCnt(oldRef), increment);
         }

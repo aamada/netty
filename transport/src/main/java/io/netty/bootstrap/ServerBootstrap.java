@@ -208,8 +208,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
         /**
          * 当有一个新的连接过来时， 先经过HeadContext -> ServerBootstrap#read
-         * @param ctx
-         * @param msg
+         *
+         * 居然是从这里开始的注册的
+         *
+         * @param ctx 就是那个NettyServer
+         * @param msg 新的NioSocketChannel
          */
         @Override
         @SuppressWarnings("unchecked")
@@ -222,7 +225,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             setChannelOptions(child, childOptions, logger);
             setAttributes(child, childAttrs);
 
-            try {// 这个childGroup就是一个线程池， worker线程池
+            try {// 这个childGroup就是一个线程池， worker线程池, 将NioSocketChannel注册到workerGroup线程, 然后添加一个监听器
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {

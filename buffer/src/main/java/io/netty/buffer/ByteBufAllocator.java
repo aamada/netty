@@ -26,12 +26,16 @@ public interface ByteBufAllocator {
     /**
      * Allocate a {@link ByteBuf}. If it is a direct or heap buffer
      * depends on the actual implementation.
+     *
+     * 是直接内存， 还是堆内存， 取决于， 子类的实现
      */
     ByteBuf buffer();
 
     /**
      * Allocate a {@link ByteBuf} with the given initial capacity.
      * If it is a direct or heap buffer depends on the actual implementation.
+     *
+     * 给定一个初始的容量， 去初始化一上ByteBuf
      */
     ByteBuf buffer(int initialCapacity);
 
@@ -39,53 +43,74 @@ public interface ByteBufAllocator {
      * Allocate a {@link ByteBuf} with the given initial capacity and the given
      * maximal capacity. If it is a direct or heap buffer depends on the actual
      * implementation.
+     *
+     * 初始化容量
+     * 最大容量
      */
     ByteBuf buffer(int initialCapacity, int maxCapacity);
 
     /**
      * Allocate a {@link ByteBuf}, preferably a direct buffer which is suitable for I/O.
+     *
+     * 更加倾向于直接内存， 分配ByteBuf
      */
     ByteBuf ioBuffer();
 
     /**
      * Allocate a {@link ByteBuf}, preferably a direct buffer which is suitable for I/O.
+     *
+     * 更加倾向于直接内存， 分配ByteBuf
      */
     ByteBuf ioBuffer(int initialCapacity);
 
     /**
      * Allocate a {@link ByteBuf}, preferably a direct buffer which is suitable for I/O.
+     *
+     * 更加倾向于直接内存， 分配ByteBuf
      */
     ByteBuf ioBuffer(int initialCapacity, int maxCapacity);
 
     /**
      * Allocate a heap {@link ByteBuf}.
+     *
+     * 堆内存
      */
     ByteBuf heapBuffer();
 
     /**
      * Allocate a heap {@link ByteBuf} with the given initial capacity.
+     *
+     * 堆内存
      */
     ByteBuf heapBuffer(int initialCapacity);
 
     /**
      * Allocate a heap {@link ByteBuf} with the given initial capacity and the given
      * maximal capacity.
+     *
+     * 堆内存, 初始大小， 最大
      */
     ByteBuf heapBuffer(int initialCapacity, int maxCapacity);
 
     /**
      * Allocate a direct {@link ByteBuf}.
+     *
+     * 直接内存
      */
     ByteBuf directBuffer();
 
     /**
      * Allocate a direct {@link ByteBuf} with the given initial capacity.
+     *
+     * 直接内存
      */
     ByteBuf directBuffer(int initialCapacity);
 
     /**
      * Allocate a direct {@link ByteBuf} with the given initial capacity and the given
      * maximal capacity.
+     *
+     * 直接内存
      */
     ByteBuf directBuffer(int initialCapacity, int maxCapacity);
 

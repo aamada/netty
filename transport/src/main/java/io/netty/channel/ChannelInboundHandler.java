@@ -18,6 +18,17 @@ package io.netty.channel;
 /**
  * {@link ChannelHandler} which adds callbacks for state changes. This allows the user
  * to hook in to state changes easily.
+ *
+ * channelRegistered注册
+ * channelUnregistered不注册
+ * channelActive激活
+ * channelInactive不激活
+ * channelRead读
+ * channelReadComplete完成读
+ * userEventTriggered用户事件触发
+ * channelWritabilityChanged
+ * exceptionCaught异常
+ *
  */
 public interface ChannelInboundHandler extends ChannelHandler {
 

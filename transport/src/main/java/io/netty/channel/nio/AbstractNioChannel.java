@@ -385,7 +385,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         for (;;) {
             try {
                 // 将channel给注册到选择器上
-                // 这里还有就是， NioServerSocketChannel是作为attachment作为附件的
+                // 这里还有就是， NioServerSocketChannel是作为attachment作为附件的, 取出NioSocketChannel注册到线程上
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {
@@ -415,7 +415,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         if (!selectionKey.isValid()) {
             return;
         }
-
+        // 一个新的连接请求过来时， 会走到这里， 并注册一个事件
         readPending = true;
 
         final int interestOps = selectionKey.interestOps();

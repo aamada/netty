@@ -75,7 +75,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
          */
         @Override
         public void read() {
-            assert eventLoop().inEventLoop();// 线程
+            assert eventLoop().inEventLoop();// 线程, NioServerSocketChannel绑定的线程
             final ChannelConfig config = config();// 配置
             final ChannelPipeline pipeline = pipeline();// 新建channel时， 就会有一个默认的链, DefaultChannelPipeline
             // 分配循环使用的ByteBuf分配对象
@@ -113,7 +113,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                 for (int i = 0; i < size; i ++) {
                     // 循环readBuf数组， 触发Channel read事件到pipeLine中
                     readPending = false;
-                    // 触发读事件
+                    // 触发读事件, pipeline来触发连接事件
                     pipeline.fireChannelRead(readBuf.get(i));
                 }
                 // 清空

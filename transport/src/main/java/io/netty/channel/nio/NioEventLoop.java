@@ -770,14 +770,16 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             }
         }
     }
-
+    // 这个SelectionKey就是ServerSocketChannel注册到Selector时， 返回的一个key， 这个key里持有ServerSocketChannel
     private void processSelectedKey(SelectionKey k, AbstractNioChannel ch) {
         // 一个ch = Channel, k = SelectionKey, unsafe=NioByteUnsafe, 它就是新建这个通道时， 创建的
-        final AbstractNioChannel.NioUnsafe unsafe = ch.unsafe();
+        // NioSocketChannelUnsafe
+        final AbstractNioChannel.NioUnsafe unsafe = ch.unsafe();// 当有新的连接过来时， 这个Channel=就是一个ServerSocketChannel， 里面的unsafe=NioMessageUnsafe
         if (!k.isValid()) {
             // 这个键不再有效
             final EventLoop eventLoop;
             try {
+                // 从channel拿取一个线程
                 eventLoop = ch.eventLoop();
             } catch (Throwable ignored) {
                 // If the channel implementation throws an exception because there is no event loop, we ignore this
@@ -802,7 +804,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             int readyOps = k.readyOps();
             // We first need to call finishConnect() before try to trigger a read(...) or write(...) as otherwise
             // the NIO JDK channel implementation may throw a NotYetConnectedException.
-            // 客户连接事件
+            // 客户连接事件, 一个新的连接过来时， 这里是不会走的， 要下一次才到这里
             if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
                 // remove OP_CONNECT as otherwise Selector.select(..) will always return without blocking
                 // See https://github.com/netty/netty/issues/924 下一次走这里
@@ -822,6 +824,8 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
             // Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead
             // to a spin loop
+            // SelectionKey.OP_READ或者SelectionKey.OP_ACCEPT就绪
+            // readyOps == 0是对JDK Bug的处理， 防止空的死循环
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
                 // NioMessageUnsafe去处理连接事件
                 unsafe.read();//NioSocketChannel$NioSocketChannelUnsafe, NioByteUnsafe 一个新的连接， 第一次走这里

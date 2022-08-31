@@ -492,7 +492,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     // 它的实现是将任务放入至一个集合中去， 待线程执行到， 去执行这个集合里的任务时， 执行
                     eventLoop.execute(new Runnable() {
                         @Override
-                        public void run() {
+                        public void run() {// 这里无论是NioServerSocketChannel还是SocketChannel都会走这里的
                             register0(promise);
                         }
                     });
@@ -521,7 +521,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 registered = true;
 
 
-                // add -> registered -> active -> read
+                // invokeHandlerAddedIfNeeded -> fireChannelRegistered -> fireChannelActive -> beginRead
 
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // 确保我们先调用 handlerAdd() -> notify promise
@@ -532,7 +532,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
-                // registered
+                // registered, 新的请求触发时， 是空的实现
                 pipeline.fireChannelRegistered();
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
@@ -851,7 +851,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             assertEventLoop();
 
             try {
-                doBeginRead();
+                doBeginRead();// -> AbstractNioChannel#doBeginRead， 注册一个事件
             } catch (final Exception e) {
                 invokeLater(new Runnable() {
                     @Override
@@ -866,11 +866,11 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         @Override
         public final void write(Object msg, ChannelPromise promise) {
             assertEventLoop();
-
+            // 拿到这个outBuffer
             ChannelOutboundBuffer outboundBuffer = this.outboundBuffer;
             if (outboundBuffer == null) {
                 try {
-                    // release message now to prevent resource-leak
+                    // release message now to prevent resource-leak 释放资源
                     ReferenceCountUtil.release(msg);
                 } finally {
                     // If the outboundBuffer is null we know the channel was closed and so
@@ -884,16 +884,16 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             int size;
-            try {
+            try {// 过滤写入的消息（数据）, AbstractNioByteChannel -> NioSocketChannel
                 msg = filterOutboundMessage(msg);
-                size = pipeline.estimatorHandle().size(msg);
-                if (size < 0) {
+                size = pipeline.estimatorHandle().size(msg);// 计算消息的长度
+                if (size < 0) {// 如果长度<0， 那么证明没有数据
                     size = 0;
                 }
             } catch (Throwable t) {
-                try {
+                try {// 如果有异常， 那么释放数据
                     ReferenceCountUtil.release(msg);
-                } finally {
+                } finally {// 安全的写入失败的消息
                     safeSetFailure(promise, t);
                 }
                 return;
@@ -910,7 +910,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             if (outboundBuffer == null) {
                 return;
             }
-
+            // 标记内存队列开始flush
             outboundBuffer.addFlush();
             flush0();
         }
@@ -919,17 +919,20 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         protected void flush0() {
             if (inFlush0) {
                 // Avoid re-entrance
+                // 如果正在刷新， 直接返回
                 return;
             }
 
             final ChannelOutboundBuffer outboundBuffer = this.outboundBuffer;
             if (outboundBuffer == null || outboundBuffer.isEmpty()) {
+                // 内存队列为空， 或者channel是关闭的， 直接返回
                 return;
             }
 
             inFlush0 = true;
 
             // Mark all pending write requests as failure if the channel is inactive.
+            // 若channel还没有激活， 则通知flush失败
             if (!isActive()) {
                 try {
                     // Check if we need to generate the exception at all.

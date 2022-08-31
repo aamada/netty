@@ -158,6 +158,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         return handle;
     }
 
+    // 一个read地方， 一个write地方调用
     final Object touch(Object msg, AbstractChannelHandlerContext next) {
         return touch ? ReferenceCountUtil.touch(msg, next) : msg;
     }
@@ -524,9 +525,12 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     private AbstractChannelHandlerContext remove(final AbstractChannelHandlerContext ctx) {
+        // 头和尾， 是不能删除的
         assert ctx != head && ctx != tail;
 
         synchronized (this) {
+            // 同步
+            // 自动移除
             atomicRemoveFromHandlerList(ctx);
 
             // If the registered is false it means that the channel was not registered on an eventloop yet.
@@ -537,6 +541,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 return ctx;
             }
 
+            // 应该是移除后， 这里有一个移除后的事件, 需要去触发
             EventExecutor executor = ctx.executor();
             if (!executor.inEventLoop()) {
                 executor.execute(new Runnable() {
@@ -991,7 +996,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelRead(Object msg) {
-        // msg = NioSocketChannel
+        // msg = NioSocketChannel, 一个新的连接事件， 从这里开始读
         AbstractChannelHandlerContext.invokeChannelRead(head, msg);
         return this;
     }
@@ -1153,10 +1158,12 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     private AbstractChannelHandlerContext getContextOrDie(ChannelHandler handler) {
+        // 找到handler对应的handlerContext
         AbstractChannelHandlerContext ctx = (AbstractChannelHandlerContext) context(handler);
         if (ctx == null) {
             throw new NoSuchElementException(handler.getClass().getName());
         } else {
+            // 返回
             return ctx;
         }
     }
@@ -1306,8 +1313,10 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @UnstableApi
     protected void incrementPendingOutboundBytes(long size) {
+        // ChannelOutboundBuffer
         ChannelOutboundBuffer buffer = channel.unsafe().outboundBuffer();
         if (buffer != null) {
+            // 写一下， 大小值
             buffer.incrementPendingOutboundBytes(size);
         }
     }
@@ -1438,7 +1447,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         @Override
         public void read(ChannelHandlerContext ctx) {
-            unsafe.beginRead();
+            unsafe.beginRead();// NioSocketChannel -> abstractChannel#beginRead()
         }
 
         @Override
@@ -1527,7 +1536,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private final class PendingHandlerAddedTask extends PendingHandlerCallback {
 
         PendingHandlerAddedTask(AbstractChannelHandlerContext ctx) {
-            super(ctx);
+            super(ctx);// 这个ctx是什么？NettyServer类？就是在NettyServer写的那个ChannelInital类， 添加自己的handler
         }
 
         @Override
@@ -1538,7 +1547,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         @Override
         void execute() {
             EventExecutor executor = ctx.executor();
-            if (executor.inEventLoop()) {
+            if (executor.inEventLoop()) {// 悬挂起来的， 一个添加handler的事件， 添加后的一个后续动作
                 callHandlerAdded0(ctx);
             } else {
                 try {

@@ -169,6 +169,8 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     private void invokeChannelRegistered() {
         if (invokeHandler()) {
             try {
+                // 这里会调用到ChannelInital的channelRegistered方法
+                // 然后会调用它的initChannel(ctx)方法， 这样， 我们自定义的Channelhandler就可以添加到pipeline中去
                 ((ChannelInboundHandler) handler()).channelRegistered(this);
             } catch (Throwable t) {
                 invokeExceptionCaught(t);
@@ -357,18 +359,18 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             fireUserEventTriggered(event);
         }
     }
-
+    // 当是一个新的请求时， 第一个是HeadContext -> serverBootstrapAcceptor
     @Override
     public ChannelHandlerContext fireChannelRead(final Object msg) {
         invokeChannelRead(findContextInbound(MASK_CHANNEL_READ), msg);
         return this;
     }
-
+    // 从head开始读一个新的连接
     static void invokeChannelRead(final AbstractChannelHandlerContext next, Object msg) {
         final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, "msg"), next);
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
-            next.invokeChannelRead(m);
+            next.invokeChannelRead(m);//headContext.invokeChannelRead(m) -> ServerBootStrap
         } else {
             executor.execute(new Runnable() {
                 @Override
@@ -698,6 +700,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         }
     }
 
+    // 写出数据， 从这里开始
     @Override
     public ChannelFuture write(Object msg) {
         return write(msg, newPromise());
@@ -706,7 +709,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     @Override
     public ChannelFuture write(final Object msg, final ChannelPromise promise) {
         write(msg, false, promise);
-
+        // 返回去， 给你一个异步的返回值
         return promise;
     }
 
@@ -720,6 +723,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     private void invokeWrite0(Object msg, ChannelPromise promise) {
         try {
+            // 从context中取出handler， 再调用handler的write方法
             ((ChannelOutboundHandler) handler()).write(this, msg, promise);
         } catch (Throwable t) {
             notifyOutboundHandlerException(t, promise);
@@ -752,7 +756,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     private void invokeFlush0() {
-        try {
+        try {// HeadContext -> pipeline -> Channel -> unsafe -> AbstractNioUnsafe -> NioSocketChannel ->
             ((ChannelOutboundHandler) handler()).flush(this);
         } catch (Throwable t) {
             invokeExceptionCaught(t);
@@ -762,12 +766,14 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     @Override
     public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
         write(msg, true, promise);
-        return promise;
+        return promise;// 它持有了NioSocketChannel以及这个线程
     }
 
     void invokeWriteAndFlush(Object msg, ChannelPromise promise) {
         if (invokeHandler()) {
+            // 先写, 将消息， 写入至消息队列中去
             invokeWrite0(msg, promise);
+            // 再刷新
             invokeFlush0();
         } else {
             writeAndFlush(msg, promise);
@@ -775,11 +781,15 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     private void write(Object msg, boolean flush, ChannelPromise promise) {
+        // 消息不能为空
         ObjectUtil.checkNotNull(msg, "msg");
         try {
             if (isNotValidPromise(promise, true)) {
+                // 这个返回值， 得是有效的， 不能完成， 不能取消
+                // 如果已经不可用了， 那么释放它
                 ReferenceCountUtil.release(msg);
                 // cancelled
+                // 返回喽
                 return;
             }
         } catch (RuntimeException e) {
@@ -787,17 +797,23 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             throw e;
         }
 
+        // 找出下一个节点
         final AbstractChannelHandlerContext next = findContextOutbound(flush ?
                 (MASK_WRITE | MASK_FLUSH) : MASK_WRITE);
+        // 记录record记录, 以防止如果有内存溢出时， 可以知道
         final Object m = pipeline.touch(msg, next);
+        // 拿到执行器
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
             if (flush) {
+                // 执行下一个节点的WriteAndFlush事件
                 next.invokeWriteAndFlush(m, promise);
             } else {
+                // 执行下一个节点的write事件
                 next.invokeWrite(m, promise);
             }
         } else {
+            // 创建一个WriteTask任务
             final WriteTask task = WriteTask.newInstance(next, m, promise, flush);
             if (!safeExecute(executor, task, promise, m, !flush)) {
                 // We failed to submit the WriteTask. We need to cancel it so we decrement the pending bytes
@@ -993,9 +1009,12 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     private static boolean safeExecute(EventExecutor executor, Runnable runnable,
             ChannelPromise promise, Object msg, boolean lazy) {
         try {
+            // 执行器， 执行的任务， 返回值， 数据， 是否延迟发送
             if (lazy && executor instanceof AbstractEventExecutor) {
+                // 延迟发送
                 ((AbstractEventExecutor) executor).lazyExecute(runnable);
             } else {
+                // 放到执行器中， 立即执行
                 executor.execute(runnable);
             }
             return true;
@@ -1029,13 +1048,17 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             }
         });
 
+        // 下一个节点， 数据， 返回值， 是否刷新
         static WriteTask newInstance(AbstractChannelHandlerContext ctx,
                 Object msg, ChannelPromise promise, boolean flush) {
+            // 拿一个可回收的可写任务
             WriteTask task = RECYCLER.get();
+            // 初始化这个任务
             init(task, ctx, msg, promise, flush);
             return task;
         }
 
+        // 提交任务时， 是否计算AbstractWriteTask对象自身占用内存大小？
         private static final boolean ESTIMATE_TASK_SIZE_ON_SUBMIT =
                 SystemPropertyUtil.getBoolean("io.netty.transport.estimateSizeOnSubmit", true);
 
@@ -1056,11 +1079,17 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
         protected static void init(WriteTask task, AbstractChannelHandlerContext ctx,
                                    Object msg, ChannelPromise promise, boolean flush) {
+            // 下一个Handlercontext
             task.ctx = ctx;
+            // 数据
             task.msg = msg;
+            // 返回值
             task.promise = promise;
 
+            // estimateSizeOnSubmit, 这个值， 我们也不会去设置， 所以呢， 一般为true， 但是呢， 也可以学习，
+            // 他直接去systemproperties中获取， 而不是像hystrix那样， 写一套复杂的参数获取框架
             if (ESTIMATE_TASK_SIZE_ON_SUBMIT) {
+                // 估计一下大小 + 32
                 task.size = ctx.pipeline.estimatorHandle().size(msg) + WRITE_TASK_OVERHEAD;
                 ctx.pipeline.incrementPendingOutboundBytes(task.size);
             } else {
