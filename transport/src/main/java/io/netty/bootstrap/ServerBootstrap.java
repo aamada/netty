@@ -156,6 +156,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
+                        // 这里的pipeline， 是传递进来的这个通道的pipeline， 添加一个ServerBootStrapAcceptor处理器
+                        // 这个处理器， 就会去将这个新的客户端的通道给注册到一个线程上去
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }

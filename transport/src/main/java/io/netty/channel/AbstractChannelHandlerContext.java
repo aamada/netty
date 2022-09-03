@@ -240,6 +240,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         // 其实这里， 我看不懂
         if (invokeHandler()) {
             try {
+                // 最终会调用到我们写的LoginResponseHandler#channelActive方法
                 ((ChannelInboundHandler) handler()).channelActive(this);
             } catch (Throwable t) {
                 invokeExceptionCaught(t);
@@ -832,6 +833,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     @Override
     public ChannelFuture writeAndFlush(Object msg) {
+        // 写消息的话， 是从tailcontext开始的
         return writeAndFlush(msg, newPromise());
     }
 

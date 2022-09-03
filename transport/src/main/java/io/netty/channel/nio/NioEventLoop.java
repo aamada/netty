@@ -263,6 +263,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         return cause;
                     }
 
+                    // 这个unwrappedSelector， 就是刚才原生的打开的选择器， 然后呢， 通过反向将这个集合给改掉
                     selectedKeysField.set(unwrappedSelector, selectedKeySet);
                     publicSelectedKeysField.set(unwrappedSelector, selectedKeySet);
                     return null;

@@ -1,0 +1,92 @@
+客户端， 连接成功时：
+processSelectedKeys
+	processSelectedKeysOptimized
+		processSelectedKey(k, (AbstractNioChannel) a)
+			unsafe.finishConnect();
+				fulfillConnectPromise(connectPromise, wasActive);
+					pipeline().fireChannelActive();
+						AbstractChannelHandlerContext.invokeChannelActive(head);
+							next.invokeChannelActive();
+								((ChannelInboundHandler) handler()).channelActive(this);
+									ctx.fireChannelActive();
+										invokeChannelActive(findContextInbound(MASK_CHANNEL_ACTIVE));
+											next.invokeChannelActive();
+												((ChannelInboundHandler) handler()).channelActive(this);
+													io.netty.example.easynio.p5.client.handler.LoginResponseHandler#channelActive
+
+io.netty.channel.AbstractChannel#writeAndFlush(java.lang.Object)
+	io.netty.channel.DefaultChannelPipeline#writeAndFlush(java.lang.Object)
+		io.netty.channel.AbstractChannelHandlerContext#writeAndFlush(java.lang.Object)
+			io.netty.channel.AbstractChannelHandlerContext#writeAndFlush(java.lang.Object, io.netty.channel.ChannelPromise)
+				io.netty.channel.AbstractChannelHandlerContext#invokeWriteAndFlush
+					io.netty.channel.AbstractChannelHandlerContext#invokeWrite0
+						io.netty.handler.codec.MessageToByteEncoder#write【这里就是我们去实现的Encoder进行的编码】
+							io.netty.channel.AbstractChannelHandlerContext#write(java.lang.Object, io.netty.channel.ChannelPromise)
+								io.netty.channel.AbstractChannelHandlerContext#invokeWrite
+									io.netty.channel.AbstractChannelHandlerContext#invokeWrite0
+										io.netty.channel.DefaultChannelPipeline.HeadContext#write
+											io.netty.channel.AbstractChannel.AbstractUnsafe#write
+												io.netty.channel.ChannelOutboundBuffer#addMessage
+													io.netty.channel.ChannelOutboundBuffer#incrementPendingOutboundBytes(long, boolean)
+					io.netty.channel.AbstractChannelHandlerContext#invokeFlush0
+						io.netty.channel.ChannelOutboundHandlerAdapter#flush
+							io.netty.channel.AbstractChannelHandlerContext#flush
+								io.netty.channel.AbstractChannelHandlerContext#invokeFlush
+									io.netty.channel.AbstractChannelHandlerContext#invokeFlush0
+										io.netty.channel.DefaultChannelPipeline.HeadContext#flush
+											io.netty.channel.AbstractChannel.AbstractUnsafe#flush
+												outboundBuffer.addFlush();
+												io.netty.channel.nio.AbstractNioChannel.AbstractNioUnsafe#flush0();
+													io.netty.channel.AbstractChannel.AbstractUnsafe#flush0
+														io.netty.channel.socket.nio.NioSocketChannel#doWrite
+
+									readIfIsAutoRead();
+										io.netty.channel.AbstractChannel#read
+											io.netty.channel.DefaultChannelPipeline#read
+												io.netty.channel.AbstractChannelHandlerContext#read
+													io.netty.channel.AbstractChannelHandlerContext#invokeRead
+														io.netty.channel.DefaultChannelPipeline.HeadContext#read
+															io.netty.channel.AbstractChannel.AbstractUnsafe#beginRead
+																io.netty.channel.nio.AbstractNioChannel#doBeginRead
+
+
+客户端接收到服务端返回的消息：
+unsafe.read()
+	io.netty.channel.nio.AbstractNioByteChannel.NioByteUnsafe#read
+		io.netty.channel.DefaultChannelPipeline#fireChannelRead
+			io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(io.netty.channel.AbstractChannelHandlerContext, java.lang.Object)
+				io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(java.lang.Object)
+					io.netty.channel.DefaultChannelPipeline.HeadContext#channelRead
+						io.netty.channel.AbstractChannelHandlerContext#fireChannelRead
+							io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(io.netty.channel.AbstractChannelHandlerContext, java.lang.Object)
+								io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(java.lang.Object)
+									io.netty.handler.codec.ByteToMessageDecoder#channelRead
+										io.netty.handler.codec.ByteToMessageDecoder#fireChannelRead(io.netty.channel.ChannelHandlerContext, io.netty.handler.codec.CodecOutputList, int)
+											io.netty.channel.AbstractChannelHandlerContext#fireChannelRead
+												io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(io.netty.channel.AbstractChannelHandlerContext, java.lang.Object)
+													io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(java.lang.Object)
+														io.netty.handler.codec.ByteToMessageDecoder#channelRead
+															io.netty.handler.codec.ByteToMessageDecoder#fireChannelRead(io.netty.channel.ChannelHandlerContext, io.netty.handler.codec.CodecOutputList, int)
+																io.netty.channel.AbstractChannelHandlerContext#fireChannelRead
+																	io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(io.netty.channel.AbstractChannelHandlerContext, java.lang.Object)
+																		io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(java.lang.Object)
+																			io.netty.channel.SimpleChannelInboundHandler#channelRead
+																				io.netty.example.easynio.p5.client.handler.LoginResponseHandler#channelRead0
+
+#客户端接收到消息
+unsafe.read()
+	pipeline.fireChannelRead(byteBuf);
+		io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(java.lang.Object)
+			io.netty.channel.DefaultChannelPipeline.HeadContext#channelRead
+				io.netty.channel.AbstractChannelHandlerContext#fireChannelRead
+					io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(io.netty.channel.AbstractChannelHandlerContext, java.lang.Object)
+						io.netty.handler.codec.ByteToMessageDecoder#fireChannelRead(io.netty.channel.ChannelHandlerContext, io.netty.handler.codec.CodecOutputList, int)
+							io.netty.channel.AbstractChannelHandlerContext#fireChannelRead
+								io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(io.netty.channel.AbstractChannelHandlerContext, java.lang.Object)
+									io.netty.handler.codec.ByteToMessageDecoder#channelRead
+										io.netty.handler.codec.ByteToMessageDecoder#fireChannelRead(io.netty.channel.ChannelHandlerContext, io.netty.handler.codec.CodecOutputList, int)
+											io.netty.channel.AbstractChannelHandlerContext#fireChannelRead
+												io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(io.netty.channel.AbstractChannelHandlerContext, java.lang.Object)
+													io.netty.channel.AbstractChannelHandlerContext#invokeChannelRead(java.lang.Object)
+														io.netty.channel.SimpleChannelInboundHandler#channelRead
+															io.netty.example.easynio.p5.server.handler.LoginRequestHandler#channelRead0
