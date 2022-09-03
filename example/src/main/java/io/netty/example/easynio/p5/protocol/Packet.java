@@ -1,4 +1,4 @@
-package io.netty.example.easynio.p3;
+package io.netty.example.easynio.p5.protocol;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
@@ -7,7 +7,6 @@ import lombok.Data;
 public abstract class Packet {
     @JSONField(deserialize = false, serialize = false)
     private Byte version = 1;
-
     @JSONField(serialize = false)
-    public abstract Byte getCommand();
+    public abstract  Byte getCommand();
 }

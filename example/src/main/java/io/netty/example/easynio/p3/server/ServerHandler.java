@@ -3,12 +3,13 @@ package io.netty.example.easynio.p3.server;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.example.easynio.p3.Packet;
-import io.netty.example.easynio.p3.PacketCodec;
+import io.netty.example.easynio.p3.protocol.Packet;
+import io.netty.example.easynio.p3.protocol.PacketCodec;
 import io.netty.example.easynio.p3.protocol.reponse.LoginResponsePacket;
+import io.netty.example.easynio.p3.protocol.reponse.MessageResponsePacket;
 import io.netty.example.easynio.p3.protocol.request.LoginRequestPacket;
+import io.netty.example.easynio.p3.protocol.request.MessageRequestPacket;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 /**
@@ -17,20 +18,18 @@ import java.time.LocalDateTime;
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        // 进行登陆处理器
-        System.err.println(LocalDateTime.now() + "；客户端开始登陆");
         // 得到信息
         ByteBuf requestByteBuf = (ByteBuf) msg;
         // 序列化
         Packet packet = PacketCodec.INSTANCE.decode(requestByteBuf);
-
         // 如果是请求包， 那么就进行处理
         if (packet instanceof LoginRequestPacket) {
+            // 进行登陆处理器
+            System.err.println(LocalDateTime.now() + "；客户端开始登陆");
             // 请求
             LoginRequestPacket loginRequestPacket = (LoginRequestPacket) packet;
             // 新建一个回复
             LoginResponsePacket responsePacket = new LoginResponsePacket();
-
             // 设置版本号
             responsePacket.setVersion(packet.getVersion());
             // 校验请求是否合法
@@ -54,7 +53,15 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     System.err.println("回复客户端失败!");
                 }
             });
+        } else if (packet instanceof MessageRequestPacket) {
+            MessageRequestPacket messageRequestPacket = (MessageRequestPacket) packet;
+            MessageResponsePacket messageResponsePacket = new MessageResponsePacket();
+            System.out.println(LocalDateTime.now() + ":收到客户端消息：" + messageRequestPacket.getMessage());
+            messageResponsePacket.setMessage("服务端回复【" + messageRequestPacket.getMessage() + "】");
+            ByteBuf responseByteBuf = PacketCodec.INSTANCE.encode(ctx.alloc(), messageResponsePacket);
+            ctx.channel().writeAndFlush(responseByteBuf);
         }
+        ctx.fireChannelRead(msg);
     }
 
     private boolean valid(LoginRequestPacket loginRequestPacket) {

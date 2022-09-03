@@ -307,6 +307,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
     @Override
     public ChannelFuture writeAndFlush(Object msg) {
+        // 写消息从这里开始
         return pipeline.writeAndFlush(msg);
     }
 

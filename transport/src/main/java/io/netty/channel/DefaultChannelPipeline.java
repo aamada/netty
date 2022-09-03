@@ -972,6 +972,8 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelActive() {
+        // 如果是连接的话， 从这里开始
+        // 连接成功后， 客户端收到后， 进行的操作
         AbstractChannelHandlerContext.invokeChannelActive(head);
         return this;
     }
@@ -1103,6 +1105,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelFuture writeAndFlush(Object msg) {
+        // 从尾部开始写
         return tail.writeAndFlush(msg);
     }
 
@@ -1483,8 +1486,9 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
+            // 是由这里AbstractChannelHandlerContext触发的
             ctx.fireChannelActive();
-
+            // 这里干的事情， 是相当于注册一个读事件， 为什么呢， 因为已经连接成功了呀， 下一步， 就是读与写了呗
             readIfIsAutoRead();
         }
 

@@ -1,17 +1,18 @@
-package io.netty.example.easynio.p3;
+package io.netty.example.easynio.p3.protocol;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.example.easynio.p3.protocol.reponse.LoginResponsePacket;
+import io.netty.example.easynio.p3.protocol.reponse.MessageResponsePacket;
 import io.netty.example.easynio.p3.protocol.request.LoginRequestPacket;
+import io.netty.example.easynio.p3.protocol.request.MessageRequestPacket;
 import io.netty.example.easynio.p3.serialize.Serializer;
 import io.netty.example.easynio.p3.serialize.impl.JSONSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.netty.example.easynio.p3.protocol.command.Command.LOGIN_REQUEST;
-import static io.netty.example.easynio.p3.protocol.command.Command.LOGIN_RESPONSE;
+import static io.netty.example.easynio.p3.protocol.command.Command.*;
 
 public class PacketCodec {
     private static final int MAGIC_NUMBER = 0x12345678;
@@ -23,6 +24,8 @@ public class PacketCodec {
         packetTypeMap = new HashMap<>();
         packetTypeMap.put(LOGIN_REQUEST, LoginRequestPacket.class);
         packetTypeMap.put(LOGIN_RESPONSE, LoginResponsePacket.class);
+        packetTypeMap.put(MESSAGE_REQUEST, MessageRequestPacket.class);
+        packetTypeMap.put(MESSAGE_RESPONSE, MessageResponsePacket.class);
 
         serializableMap = new HashMap<>();
         Serializer serializable = new JSONSerializer();

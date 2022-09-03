@@ -3,10 +3,12 @@ package io.netty.example.easynio.p3.client;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.example.easynio.p3.Packet;
-import io.netty.example.easynio.p3.PacketCodec;
+import io.netty.example.easynio.p3.protocol.Packet;
+import io.netty.example.easynio.p3.protocol.PacketCodec;
 import io.netty.example.easynio.p3.protocol.reponse.LoginResponsePacket;
+import io.netty.example.easynio.p3.protocol.reponse.MessageResponsePacket;
 import io.netty.example.easynio.p3.protocol.request.LoginRequestPacket;
+import io.netty.example.easynio.p3.util.LoginUtil;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -36,10 +38,14 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
         if (packet instanceof LoginResponsePacket) {
             LoginResponsePacket loginResponsePacket = (LoginResponsePacket) packet;
             if (loginResponsePacket.isSuccess()) {
-                System.err.println("客户登录成功");
-            } else {
+                System.err.println(LocalDateTime.now() + "客户登录成功");
+                LoginUtil.markAsLogin(ctx.channel());
+            }  else {
                 System.err.println(LocalDateTime.now() + "；客户端登录失败， 原因：" + loginResponsePacket.getReason());
             }
+        } else if (packet instanceof MessageResponsePacket) {
+            MessageResponsePacket messageResponsePacket = (MessageResponsePacket) packet;
+            System.err.println(LocalDateTime.now() + "；收到服务端消息：" + messageResponsePacket.getMessage());
         }
     }
 }

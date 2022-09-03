@@ -812,7 +812,8 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 ops &= ~SelectionKey.OP_CONNECT;
                 // 连接完成后客户端除了连接事件都感兴趣
                 k.interestOps(ops);
-                // 完成连接
+                // 完成连接, 就会去触发channelActive
+                // 比如连接成后， 这里触发这个事件， 我们可以在这里跟服务端打个招呼， 发个认证的东西
                 unsafe.finishConnect();
             }
 
@@ -828,6 +829,8 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             // readyOps == 0是对JDK Bug的处理， 防止空的死循环
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
                 // NioMessageUnsafe去处理连接事件
+                // 在服务端， 处理连接事件
+                // 在worderGroup线程上， 去读取消息也是走这里
                 unsafe.read();//NioSocketChannel$NioSocketChannelUnsafe, NioByteUnsafe 一个新的连接， 第一次走这里
             }
         } catch (CancelledKeyException ignored) {

@@ -103,32 +103,87 @@ public class IdleStateHandler extends ChannelDuplexHandler {
     private final ChannelFutureListener writeListener = new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
+            // 记录最后写的时间
             lastWriteTime = ticksInNanos();
+            // 重置firstWriterIdlerIdleEvent和firstAllIdleEvent为true
             firstWriterIdleEvent = firstAllIdleEvent = true;
         }
     };
 
+    /**
+     * 是否观察写入队列
+     */
     private final boolean observeOutput;
+    /**
+     * 配置的读空闲时间
+     */
     private final long readerIdleTimeNanos;
+    /**
+     * 写的空闲时间
+     */
     private final long writerIdleTimeNanos;
+    /**
+     * 读或者写， 的空闲时间
+     */
     private final long allIdleTimeNanos;
-
+    /**
+     * 读空闲的定时检测任务
+     */
     private Future<?> readerIdleTimeout;
+    /**
+     * 最后读时间
+     */
     private long lastReadTime;
+    /**
+     * 是否首次读空闲
+     */
     private boolean firstReaderIdleEvent = true;
 
+    /**
+     * 写空闲的定时检测任务
+     */
     private Future<?> writerIdleTimeout;
+    /**
+     * 最后写时间
+     */
     private long lastWriteTime;
+    /**
+     * 是否首次写空闲
+     */
     private boolean firstWriterIdleEvent = true;
 
+    /**
+     * all空闲时间
+     */
     private Future<?> allIdleTimeout;
+    /**
+     * 是否首次all空闲
+     */
     private boolean firstAllIdleEvent = true;
 
+    /**
+     * 状态
+     * 0-none， 未初始化
+     * 1-initialized， 已经初始化
+     * 2-destroyed， 已经销毁
+     */
     private byte state; // 0 - none, 1 - initialized, 2 - destroyed
+    /**
+     * 是否正在读取
+     */
     private boolean reading;
 
+    /**
+     * 最后检测到发生变化的时间
+     */
     private long lastChangeCheckTimeStamp;
+    /**
+     * 第一秂准备flash到对端的消息的hashCode
+     */
     private int lastMessageHashCode;
+    /**
+     * 总共等待flush到对端的内存大小
+     */
     private long lastPendingWriteBytes;
     private long lastFlushProgress;
 
@@ -279,19 +334,27 @@ public class IdleStateHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        // 开启了read或all的空闲检测
         if (readerIdleTimeNanos > 0 || allIdleTimeNanos > 0) {
+            // 标记正在读取
             reading = true;
+            // 重置firstWriterIdleEvent和firstAllIdleEvent为true
             firstReaderIdleEvent = firstAllIdleEvent = true;
         }
+        // 继续传播事件到下一个节点
         ctx.fireChannelRead(msg);
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        // 开启了read或all的空闲检测
         if ((readerIdleTimeNanos > 0 || allIdleTimeNanos > 0) && reading) {
+            // 记录最后读时间
             lastReadTime = ticksInNanos();
+            // 标记不在读取
             reading = false;
         }
+        // 继续传播事件到下一个节点
         ctx.fireChannelReadComplete();
     }
 

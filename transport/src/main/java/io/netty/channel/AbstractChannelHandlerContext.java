@@ -212,8 +212,10 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         }
     }
 
+    // 这里上一步， 又来自于HeadContext调用的
     @Override
     public ChannelHandlerContext fireChannelActive() {
+        // 找到下一个节点， 然后呢， 调用
         invokeChannelActive(findContextInbound(MASK_CHANNEL_ACTIVE));
         return this;
     }
@@ -221,6 +223,8 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     static void invokeChannelActive(final AbstractChannelHandlerContext next) {
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
+            // 注意这里是一个context， 它里面含有handler
+            // 所以下一步， 是找到这个handler， 再去调用这个handler的channelActive方法
             next.invokeChannelActive();
         } else {
             executor.execute(new Runnable() {
@@ -233,6 +237,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     private void invokeChannelActive() {
+        // 其实这里， 我看不懂
         if (invokeHandler()) {
             try {
                 ((ChannelInboundHandler) handler()).channelActive(this);

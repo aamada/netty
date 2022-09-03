@@ -1,6 +1,6 @@
 package io.netty.example.easynio.p3.protocol.reponse;
 
-import io.netty.example.easynio.p3.Packet;
+import io.netty.example.easynio.p3.protocol.Packet;
 import lombok.Data;
 
 import static io.netty.example.easynio.p3.protocol.command.Command.LOGIN_RESPONSE;

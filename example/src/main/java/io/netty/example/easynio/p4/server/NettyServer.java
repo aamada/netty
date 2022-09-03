@@ -1,4 +1,4 @@
-package io.netty.example.easynio.p3.server;
+package io.netty.example.easynio.p4.server;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -6,15 +6,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.example.easynio.p3.server.handler.inbound.InBoundHandlerA;
-import io.netty.example.easynio.p3.server.handler.inbound.InBoundHandlerB;
-import io.netty.example.easynio.p3.server.handler.inbound.InBoundHandlerC;
-import io.netty.example.easynio.p3.server.handler.outbound.OutBoundHandlerA;
-import io.netty.example.easynio.p3.server.handler.outbound.OutBoundHandlerB;
-import io.netty.example.easynio.p3.server.handler.outbound.OutBoundHandlerC;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.internal.logging.InternalLogLevel;
 
 public class NettyServer {
     private static final int PORT = 8000;
@@ -32,16 +23,7 @@ public class NettyServer {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(new ServerHandler());
-                        ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
-                        ch.pipeline().addLast(new InBoundHandlerA());
-                        ch.pipeline().addLast(new InBoundHandlerB());
-                        ch.pipeline().addLast(new InBoundHandlerC());
-
-
-                        ch.pipeline().addLast(new OutBoundHandlerA());
-                        ch.pipeline().addLast(new OutBoundHandlerB());
-                        ch.pipeline().addLast(new OutBoundHandlerC());
+                        ch.pipeline().addLast(new FirstServerHandler());
                     }
                 });
         bind(serverBootstrap, PORT);
