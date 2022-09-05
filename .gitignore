@@ -54,3 +54,7 @@ mainframer
 
 # exclude file created by the flatten plugin
 .flattened-pom.xml
+.github/workflows/ci-release-5.yml
+.github/workflows/ci-pr.yml
+.github/workflows/ci-deploy.yml
+.github/workflows/ci-release.yml

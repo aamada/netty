@@ -50,7 +50,7 @@ public class NettyClient {
         bootstrap.connect(host, port).addListener(future -> {
             if (future.isSuccess()) {
                 System.out.println(LocalDateTime.now() + "：连接成功， 启动控制台线程!!!");
-                Channel channel = ((ChannelFuture)future).channel();
+                Channel channel = ((ChannelFuture) future).channel();
                 startConsoleThread(channel);
             } else if (retry == 0) {
                 System.out.println("重试次数用完， 放弃连接！");
@@ -66,7 +66,7 @@ public class NettyClient {
     private static void startConsoleThread(Channel channel) {
         new Thread(() -> {
             while (!Thread.interrupted()) {
-                    Scanner sc = new Scanner(System.in);
+                Scanner sc = new Scanner(System.in);
                 if (!LoginUtil.hasLogin(channel)) {
                     System.out.println("输入用户名登陆：");
                     String username = sc.nextLine();

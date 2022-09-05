@@ -9,6 +9,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.example.easynio.p6.codec.PacketDecoder;
 import io.netty.example.easynio.p6.codec.PacketEncoder;
 import io.netty.example.easynio.p6.codec.Spliter;
+import io.netty.example.easynio.p6.server.handler.AuthHandler;
 import io.netty.example.easynio.p6.server.handler.LoginRequestHandler;
 import io.netty.example.easynio.p6.server.handler.MessageRequestHandler;
 
@@ -33,6 +34,7 @@ public class NettyServer {
                         ch.pipeline().addLast(new Spliter());
                         ch.pipeline().addLast(new PacketDecoder());
                         ch.pipeline().addLast(new LoginRequestHandler());
+                        ch.pipeline().addLast(new AuthHandler());
                         ch.pipeline().addLast(new MessageRequestHandler());
                         ch.pipeline().addLast(new PacketEncoder());
                     }

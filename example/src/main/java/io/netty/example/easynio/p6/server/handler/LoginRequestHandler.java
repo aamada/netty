@@ -30,10 +30,10 @@ public class LoginRequestHandler extends SimpleChannelInboundHandler<LoginReques
             System.err.println(LocalDateTime.now() + "登陆失败.");
         }
 
-        ctx.channel().writeAndFlush(loginRequestPacket);
+        ctx.channel().writeAndFlush(loginResponsePacket);
     }
 
-    private boolean valid(LoginRequestPacket loginResponsePacket) {
+    private boolean valid(LoginRequestPacket loginRequestPacket) {
         return true;
     }
 
