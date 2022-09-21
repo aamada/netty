@@ -27,6 +27,7 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ReflectiveChannelFactory;
 import io.netty.util.AttributeKey;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.internal.ObjectUtil;
@@ -271,6 +272,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     private ChannelFuture doBind(final SocketAddress localAddress) {
         // 初始化并注册
         // 注册时返回的一个Promise
+        PrintUitls.printToConsole("init and register channel");
         final ChannelFuture regFuture = initAndRegister();
         // 拿到这个SocketChannel
         final Channel channel = regFuture.channel();
@@ -293,6 +295,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             regFuture.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
+                    PrintUitls.printToConsole("ChannelFutureListener regFuture.addListener(new ChannelFutureListener()");
                     Throwable cause = future.cause();
                     if (cause != null) {
                         // Registration on the EventLoop failed so fail the ChannelPromise directly to not cause an
@@ -302,7 +305,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
                         // Registration was successful, so set the correct executor to use.
                         // See https://github.com/netty/netty/issues/2586
                         promise.registered();
-
+                        PrintUitls.printToConsole("doBind0(regFuture, channel, localAddress, promise)");
                         doBind0(regFuture, channel, localAddress, promise);// promise=PendingRegistrationPromise
                     }
                 }
@@ -318,9 +321,11 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         try {
             // 1. 新建一个Channel
             // 使用反射创建一个通道
+            PrintUitls.printToConsole("channelFactory.newChannel()");
             channel = channelFactory.newChannel();
             // 2. 初始化
             // 设置属性， 设置处理链上的处理器
+            PrintUitls.printToConsole("init(channel)");
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -339,6 +344,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         // next()去选择一个线程
         // 返回一个提前返回的未来对象
         // 这里拿到的bossGroup
+        PrintUitls.printToConsole("config().group().register(channel)");
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
@@ -368,9 +374,11 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
         // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
         // the pipeline in its channelRegistered() implementation.
+        PrintUitls.printToConsole("put a task input thread , 在doBind0这个方法里面放入的, task = channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE)");
         channel.eventLoop().execute(new Runnable() {
             @Override
             public void run() {
+                PrintUitls.printToConsole("channel.eventLoop().execute(new Runnable()#java.lang.Runnable#run");
                 if (regFuture.isSuccess()) {
                     channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);// 这里是， 当关闭的时候， 就会关闭, promise=PendingRegistrationPromise
                 } else {

@@ -20,6 +20,7 @@ import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelOutboundBuffer;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.SocketUtils;
 import io.netty.channel.nio.AbstractNioMessageChannel;
 import io.netty.channel.socket.DefaultServerSocketChannelConfig;
@@ -60,6 +61,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
         try {
             // 得到一个原生的ServerSocketChannel
             // 一个方法， 一个Provider，  一个null
+            PrintUitls.printToConsole("io.netty.channel.socket.nio.NioServerSocketChannel#newChannel");
             ServerSocketChannel channel =
                     SelectorProviderUtil.newChannel(OPEN_SERVER_SOCKET_CHANNEL_WITH_FAMILY, provider, family);
             return channel == null ? provider.openServerSocketChannel() : channel;

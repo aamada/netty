@@ -58,3 +58,4 @@ mainframer
 .github/workflows/ci-pr.yml
 .github/workflows/ci-deploy.yml
 .github/workflows/ci-release.yml
+*.yml

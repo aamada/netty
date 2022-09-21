@@ -28,6 +28,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.util.AttributeKey;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -143,9 +144,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = newAttributesArray(childAttrs);
 
         // 给这个处理器链加上一个handler
+        PrintUitls.printToConsole("p.addLast(new ChannelInitializer<Channel>()");
         p.addLast(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(final Channel ch) {
+                PrintUitls.printToConsole("io.netty.channel.ChannelInitializer#initChannel");
                 final ChannelPipeline pipeline = ch.pipeline();
                 ChannelHandler handler = config.handler();
                 if (handler != null) {
@@ -153,11 +156,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 }
 
                 // 这里将任务给放到了EventLoop线程里去执行了
+                PrintUitls.printToConsole("put a runable into executor, task = pipeline.addLast(new ServerBootstrapAcceptor(");
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
                         // 这里的pipeline， 是传递进来的这个通道的pipeline， 添加一个ServerBootStrapAcceptor处理器
                         // 这个处理器， 就会去将这个新的客户端的通道给注册到一个线程上去
+                        PrintUitls.printToConsole("pipeline.addLast(new ServerBootstrapAcceptor(");
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }
@@ -219,6 +224,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         @Override
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            PrintUitls.printToConsole("io.netty.bootstrap.ServerBootstrap.ServerBootstrapAcceptor#channelRead");
             // NioSocketChannel
             final Channel child = (Channel) msg;
 
@@ -231,6 +237,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
+                        PrintUitls.printToConsole("public void operationComplete(ChannelFuture future) throws Exception {");
                         if (!future.isSuccess()) {
                             forceClose(child, future.cause());
                         }

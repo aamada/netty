@@ -15,6 +15,7 @@
  */
 package io.netty.util.concurrent;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.SystemPropertyUtil;
@@ -391,6 +392,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      */
     protected void addTask(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
+        PrintUitls.printToConsole("io.netty.util.concurrent.SingleThreadEventExecutor#addTask");
         if (!offerTask(task)) {
             // 添加不成功， 那么拒绝
             reject(task);

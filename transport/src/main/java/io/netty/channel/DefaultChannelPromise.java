@@ -16,6 +16,7 @@
 package io.netty.channel;
 
 import io.netty.channel.ChannelFlushPromiseNotifier.FlushCheckpoint;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
@@ -50,6 +51,7 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
      */
     public DefaultChannelPromise(Channel channel, EventExecutor executor) {
         super(executor);
+        PrintUitls.printToConsole("new DefaultChannelPromise");
         this.channel = checkNotNull(channel, "channel");
     }
 

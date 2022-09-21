@@ -15,6 +15,7 @@
  */
 package io.netty.util.concurrent;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.InternalThreadLocalMap;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
@@ -179,6 +180,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public Promise<V> addListener(GenericFutureListener<? extends Future<? super V>> listener) {
+        PrintUitls.printToConsole("io.netty.util.concurrent.DefaultPromise#addListener");
         checkNotNull(listener, "listener");
 
         synchronized (this) {
@@ -568,6 +570,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     private void notifyListenersNow() {
+        PrintUitls.printToConsole("io.netty.util.concurrent.DefaultPromise#notifyListenersNow");
         Object listeners;
         // 将其进行同步
         synchronized (this) {

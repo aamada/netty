@@ -20,6 +20,7 @@ import io.netty.channel.socket.ChannelOutputShutdownEvent;
 import io.netty.channel.socket.ChannelOutputShutdownException;
 import io.netty.util.DefaultAttributeMap;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.UnstableApi;
@@ -473,6 +474,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
          */
         @Override
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
+            PrintUitls.printToConsole("io.netty.channel.AbstractChannel.AbstractUnsafe#register");
             ObjectUtil.checkNotNull(eventLoop, "eventLoop");
             if (isRegistered()) {
                 promise.setFailure(new IllegalStateException("registered to an event loop already"));
@@ -487,13 +489,16 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             AbstractChannel.this.eventLoop = eventLoop;
 
             if (eventLoop.inEventLoop()) {
+                PrintUitls.printToConsole("in event loop, register0");
                 register0(promise);
             } else {
                 try {
                     // 它的实现是将任务放入至一个集合中去， 待线程执行到， 去执行这个集合里的任务时， 执行
+                    PrintUitls.printToConsole("put a runnable【register0(promise)】 into executor");
                     eventLoop.execute(new Runnable() {
                         @Override
                         public void run() {// 这里无论是NioServerSocketChannel还是SocketChannel都会走这里的
+                            PrintUitls.printToConsole("execute register0");
                             register0(promise);
                         }
                     });
@@ -517,6 +522,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     return;
                 }
                 boolean firstRegistration = neverRegistered;
+                PrintUitls.printToConsole("register0#doRegister()");
                 doRegister();
                 neverRegistered = false;
                 registered = true;
@@ -534,16 +540,19 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 // 所以这里会调用到io.netty.channel.ChannelInitializer.handlerAdded的方法
                 // 调用完成后， 会将这个NettyServer的ChannelInitializer给移除掉
                 // 所以下面的， 第三行代码， 就执行不到io.netty.channel.ChannelInitializer.channelRegistered这个方法了
+                PrintUitls.printToConsole("register0#pipeline.invokeHandlerAddedIfNeeded()");
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
                 // registered, 新的请求触发时， 是空的实现
+                PrintUitls.printToConsole("register0#pipeline.fireChannelRegistered()");
                 pipeline.fireChannelRegistered();
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {
                     if (firstRegistration) {
                         // active
+                        PrintUitls.printToConsole("register0#pipeline.fireChannelActive()");
                         pipeline.fireChannelActive();
                     } else if (config().isAutoRead()) {
                         // This channel was registered before and autoRead() is set. This means we need to begin read

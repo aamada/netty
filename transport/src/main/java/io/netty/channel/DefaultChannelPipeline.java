@@ -18,6 +18,7 @@ package io.netty.channel;
 import io.netty.channel.Channel.Unsafe;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ResourceLeakDetector;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.FastThreadLocal;
@@ -727,6 +728,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             // We are now registered to the EventLoop. It's time to call the callbacks for the ChannelHandlers,
             // that were added before the registration was done.
             // 我们现在已注册到 EventLoop。是时候调用 ChannelHandler 的回调了，它们是在注册完成之前添加的。
+            PrintUitls.printToConsole("invokeHandlerAddedIfNeeded -> callHandlerAddedForAllHandlers()");
             callHandlerAddedForAllHandlers();
         }
     }
@@ -892,12 +894,14 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelRegistered() {
+        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline#fireChannelRegistered");
         AbstractChannelHandlerContext.invokeChannelRegistered(head);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelUnregistered() {
+        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline#fireChannelUnregistered");
         AbstractChannelHandlerContext.invokeChannelUnregistered(head);
         return this;
     }
@@ -974,12 +978,14 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline fireChannelActive() {
         // 如果是连接的话， 从这里开始
         // 连接成功后， 客户端收到后， 进行的操作
+        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline#fireChannelActive");
         AbstractChannelHandlerContext.invokeChannelActive(head);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelInactive() {
+        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline.fireChannelInactive");
         AbstractChannelHandlerContext.invokeChannelInactive(head);
         return this;
     }

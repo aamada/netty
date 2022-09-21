@@ -29,6 +29,7 @@ import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoop;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -387,6 +388,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             try {
                 // 将channel给注册到选择器上
                 // 这里还有就是， NioServerSocketChannel是作为attachment作为附件的, 取出NioSocketChannel注册到线程上
+                PrintUitls.printToConsole("真的注册了, io.netty.channel.nio.AbstractNioChannel#doRegister");
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {
