@@ -61,7 +61,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
         try {
             // 得到一个原生的ServerSocketChannel
             // 一个方法， 一个Provider，  一个null
-            PrintUitls.printToConsole("io.netty.channel.socket.nio.NioServerSocketChannel#newChannel");
+            PrintUitls.printToConsole("provider新建一个channel");
             ServerSocketChannel channel =
                     SelectorProviderUtil.newChannel(OPEN_SERVER_SOCKET_CHANNEL_WITH_FAMILY, provider, family);
             return channel == null ? provider.openServerSocketChannel() : channel;
@@ -146,6 +146,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     @Override
     protected void doBind(SocketAddress localAddress) throws Exception {
         if (PlatformDependent.javaVersion() >= 7) {
+            PrintUitls.printToConsole("真正的绑定, 将channel绑定在某个地址端口上， 调用jdk的代码");
             javaChannel().bind(localAddress, config.getBacklog());
         } else {
             javaChannel().socket().bind(localAddress, config.getBacklog());

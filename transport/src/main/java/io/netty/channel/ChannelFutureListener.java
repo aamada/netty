@@ -15,6 +15,7 @@
  */
 package io.netty.channel;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -52,6 +53,7 @@ public interface ChannelFutureListener extends GenericFutureListener<ChannelFutu
     ChannelFutureListener CLOSE_ON_FAILURE = new ChannelFutureListener() {
         @Override
         public void operationComplete(ChannelFuture future) {
+            PrintUitls.printToConsole("监听器执行， CLOSE_ON_FAILURE 的回调方法operationComplete()");
             if (!future.isSuccess()) {// 连接成功后， 第三个回调的地方
                 future.channel().close();
             }

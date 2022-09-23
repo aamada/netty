@@ -15,6 +15,7 @@
  */
 package io.netty.util.concurrent;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.DefaultPriorityQueue;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.PriorityQueue;
@@ -54,6 +55,7 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     protected AbstractScheduledEventExecutor(EventExecutorGroup parent) {
         // 一个抽象的定时事件执行器
         super(parent);
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 开始创建AbstractScheduledEventExecutor");
     }
 
     /**
@@ -198,6 +200,7 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     // 从队列中取出一个任务
     final ScheduledFutureTask<?> peekScheduledTask() {
         Queue<ScheduledFutureTask<?>> scheduledTaskQueue = this.scheduledTaskQueue;
+        PrintUitls.printToConsole("从scheduledTaskQueue里将任务拿取出来");
         return scheduledTaskQueue != null ? scheduledTaskQueue.peek() : null;
     }
 

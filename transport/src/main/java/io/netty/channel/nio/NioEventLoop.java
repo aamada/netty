@@ -23,6 +23,7 @@ import io.netty.channel.EventLoopTaskQueueFactory;
 import io.netty.channel.SelectStrategy;
 import io.netty.channel.SingleThreadEventLoop;
 import io.netty.util.IntSupplier;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.RejectedExecutionHandler;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.PlatformDependent;
@@ -152,6 +153,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         // 线程组， 线程执行器， false， 新建一个task， 新建一个task， 拒绝策略
         super(parent, executor, false, newTaskQueue(taskQueueFactory), newTaskQueue(tailTaskQueueFactory),
                 rejectedExecutionHandler);
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 开始创建NioEventLoop, provider, selectStrategy, selector, unwrappedSelector");
         // 确保这个提供者
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
         // 选择策略
@@ -168,6 +170,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         if (queueFactory == null) {
             return newTaskQueue0(DEFAULT_MAX_PENDING_TASKS);
         }
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 开始创建NioEventLoop, queueFactory.newTaskQueue(DEFAULT_MAX_PENDING_TASKS)");
         return queueFactory.newTaskQueue(DEFAULT_MAX_PENDING_TASKS);
     }
 
@@ -191,15 +194,18 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         final Selector unwrappedSelector;
         try {
             // 打开这个选择器
+            PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, provider打开选择器");
             unwrappedSelector = provider.openSelector();
         } catch (IOException e) {
             throw new ChannelException("failed to open a new selector", e);
         }
 
         if (DISABLE_KEY_SET_OPTIMIZATION) {
+            PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 新建SelectorTuple, 0");
             return new SelectorTuple(unwrappedSelector);
         }
 
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, maybeSelectorImplClass=AccessController.doPrivileged(new PrivilegedAction<Object>(), 这个是给到jdk最里层使用的");
         Object maybeSelectorImplClass = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
             public Object run() {
@@ -221,15 +227,18 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 Throwable t = (Throwable) maybeSelectorImplClass;
                 logger.trace("failed to instrument a special java.util.Set into: {}", unwrappedSelector, t);
             }
+            PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 新建SelectorTuple, 1");
             return new SelectorTuple(unwrappedSelector);
         }
 
         final Class<?> selectorImplClass = (Class<?>) maybeSelectorImplClass;
         // 一个集合哦， 还给封装起来了
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 新建一个SelectedSelectionKeySet");
         final SelectedSelectionKeySet selectedKeySet = new SelectedSelectionKeySet();
 
         // 这里是一个优化点， 为什么一个新的连接过来时， 会使用到netty的这个集合呢？
         // 就是这里使用反射将集合给java的设置进去
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, maybeException=AccessController.doPrivileged(new PrivilegedAction<Object>(), 这个是给到jdk最里层使用的");
         Object maybeException = AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
             public Object run() {
@@ -264,7 +273,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                     }
 
                     // 这个unwrappedSelector， 就是刚才原生的打开的选择器， 然后呢， 通过反向将这个集合给改掉
+                    PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, selectedKeysField, 替换掉原生的字段");
                     selectedKeysField.set(unwrappedSelector, selectedKeySet);
+                    PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, publicSelectedKeysField, 替换掉原生的字段");
                     publicSelectedKeysField.set(unwrappedSelector, selectedKeySet);
                     return null;
                 } catch (NoSuchFieldException e) {
@@ -279,10 +290,12 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             selectedKeys = null;
             Exception e = (Exception) maybeException;
             logger.trace("failed to instrument a special java.util.Set into: {}", unwrappedSelector, e);
+            PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 新建一个SelectorTuple, 2");
             return new SelectorTuple(unwrappedSelector);
         }
         selectedKeys = selectedKeySet;
         logger.trace("instrumented a special java.util.Set into: {}", unwrappedSelector);
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 新建一个SelectorTuple, 3");
         return new SelectorTuple(unwrappedSelector,
                                  new SelectedSelectionKeySetSelector(unwrappedSelector, selectedKeySet));
     }
@@ -301,6 +314,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
     private static Queue<Runnable> newTaskQueue0(int maxPendingTasks) {
         // This event loop never calls takeTask()
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 开始创建NioEventLoop, PlatformDependent.<Runnable>newMpscQueue(maxPendingTasks)");
         return maxPendingTasks == Integer.MAX_VALUE ? PlatformDependent.<Runnable>newMpscQueue()
                 : PlatformDependent.<Runnable>newMpscQueue(maxPendingTasks);
     }

@@ -474,7 +474,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
          */
         @Override
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
-            PrintUitls.printToConsole("io.netty.channel.AbstractChannel.AbstractUnsafe#register");
+            PrintUitls.printToConsole("使用unsafe去注册");
             ObjectUtil.checkNotNull(eventLoop, "eventLoop");
             if (isRegistered()) {
                 promise.setFailure(new IllegalStateException("registered to an event loop already"));
@@ -494,11 +494,11 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             } else {
                 try {
                     // 它的实现是将任务放入至一个集合中去， 待线程执行到， 去执行这个集合里的任务时， 执行
-                    PrintUitls.printToConsole("put a runnable【register0(promise)】 into executor");
+                    PrintUitls.printToConsole("添加任务:【register0(promise)】");
                     eventLoop.execute(new Runnable() {
                         @Override
                         public void run() {// 这里无论是NioServerSocketChannel还是SocketChannel都会走这里的
-                            PrintUitls.printToConsole("execute register0");
+                            PrintUitls.printToConsole("执行任务：register0()");
                             register0(promise);
                         }
                     });
@@ -522,7 +522,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     return;
                 }
                 boolean firstRegistration = neverRegistered;
-                PrintUitls.printToConsole("register0#doRegister()");
+                PrintUitls.printToConsole("执行任务， register0#doRegister()");
                 doRegister();
                 neverRegistered = false;
                 registered = true;
@@ -593,6 +593,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             boolean wasActive = isActive();
             try {
+                PrintUitls.printToConsole("doBind");
                 doBind(localAddress);
             } catch (Throwable t) {
                 safeSetFailure(promise, t);
@@ -601,9 +602,11 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             if (!wasActive && isActive()) {
+                PrintUitls.printToConsole("添加任务， pipeline.fireChannelActive()事件");
                 invokeLater(new Runnable() {//一会再调用
                     @Override
                     public void run() {
+                        PrintUitls.printToConsole("执行任务， pipeline.fireChannelActive()");
                         pipeline.fireChannelActive();
                     }
                 });

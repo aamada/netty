@@ -85,6 +85,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         if (this.childGroup != null) {
             throw new IllegalStateException("childGroup set already");
         }
+        PrintUitls.printToConsole("设置childGroup");
         this.childGroup = ObjectUtil.checkNotNull(childGroup, "childGroup");
         return this;
     }
@@ -144,11 +145,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = newAttributesArray(childAttrs);
 
         // 给这个处理器链加上一个handler
-        PrintUitls.printToConsole("p.addLast(new ChannelInitializer<Channel>()");
+        PrintUitls.printToConsole("往server channel里的pipeline， 加入一个handler, 它是一个ChannelInboundHandlerAdapter, 负责初始化新连接的channel, p.addLast(new ChannelInitializer<Channel>()");
         p.addLast(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(final Channel ch) {
-                PrintUitls.printToConsole("io.netty.channel.ChannelInitializer#initChannel");
+                PrintUitls.printToConsole("处理器执行：这里是ServerChannel的pipeline里的一个初始化的handler， 初始化这个channel， io.netty.channel.ChannelInitializer#initChannel, 这里的ch是客户端的(好像是服务端的)channel， channel = " + ch.toString());
                 final ChannelPipeline pipeline = ch.pipeline();
                 ChannelHandler handler = config.handler();
                 if (handler != null) {
@@ -156,13 +157,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 }
 
                 // 这里将任务给放到了EventLoop线程里去执行了
-                PrintUitls.printToConsole("put a runable into executor, task = pipeline.addLast(new ServerBootstrapAcceptor(");
+                PrintUitls.printToConsole("处理器执行：这里是ServerChannel的pipeline里的一个初始化的handler, 将将一个任务放入至eventLoop中， 将一个往客户(这里好像是服务端的哦)channel的pipe里加入一个接收器, task = pipeline.addLast(new ServerBootstrapAcceptor(");
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
                         // 这里的pipeline， 是传递进来的这个通道的pipeline， 添加一个ServerBootStrapAcceptor处理器
                         // 这个处理器， 就会去将这个新的客户端的通道给注册到一个线程上去
-                        PrintUitls.printToConsole("pipeline.addLast(new ServerBootstrapAcceptor(");
+                        PrintUitls.printToConsole("执行任务:往客户端的(server端的)channel的pipie里加入一个接收器ServerBootstrapAcceptor");
                         pipeline.addLast(new ServerBootstrapAcceptor(
                                 ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
                     }
@@ -224,7 +225,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         @Override
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            PrintUitls.printToConsole("io.netty.bootstrap.ServerBootstrap.ServerBootstrapAcceptor#channelRead");
+            PrintUitls.printToConsole("接收器里的读事件：io.netty.bootstrap.ServerBootstrap.ServerBootstrapAcceptor#channelRead");
             // NioSocketChannel
             final Channel child = (Channel) msg;
 
@@ -234,10 +235,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             setAttributes(child, childAttrs);
 
             try {// 这个childGroup就是一个线程池， worker线程池, 将NioSocketChannel注册到workerGroup线程, 然后添加一个监听器
+                PrintUitls.printToConsole("从work线程池里找到一个线程与这个客户端channel进行绑定(里面的代码与server端的注册相同)， 然后会添加一个监听器， operationComplete()");
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
-                        PrintUitls.printToConsole("public void operationComplete(ChannelFuture future) throws Exception {");
+                        PrintUitls.printToConsole("监听器执行， operationComplete(ChannelFuture future)");
                         if (!future.isSuccess()) {
                             forceClose(child, future.cause());
                         }

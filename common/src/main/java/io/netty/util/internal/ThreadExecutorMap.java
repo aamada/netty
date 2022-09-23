@@ -15,6 +15,7 @@
  */
 package io.netty.util.internal;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FastThreadLocal;
 
@@ -51,11 +52,13 @@ public final class ThreadExecutorMap {
     public static Executor apply(final Executor executor, final EventExecutor eventExecutor) {
         ObjectUtil.checkNotNull(executor, "executor");
         ObjectUtil.checkNotNull(eventExecutor, "eventExecutor");
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 返回一个executor， 这里封装了真的ThreadPerTaskExecutor");
         return new Executor() {
             @Override
             public void execute(final Runnable command) {
                 // ThreadPerTaskExecutor
                 // 这个executor就是新建NioEventLoop时， 在其父类， 传递过来的一个ThreadPerTaskExecutor
+                PrintUitls.printToConsole("这个Executor是ThreadExecutorMap中的Executor， 这里的executor=ThreadPerTaskExecutor, 将要执行的就是executor， 把这个command给放入至executor中去, apply会返回一个runnable");
                 executor.execute(apply(command, eventExecutor));
             }
         };
@@ -68,11 +71,13 @@ public final class ThreadExecutorMap {
     public static Runnable apply(final Runnable command, final EventExecutor eventExecutor) {
         ObjectUtil.checkNotNull(command, "command");
         ObjectUtil.checkNotNull(eventExecutor, "eventExecutor");
+        PrintUitls.printToConsole("apply又将command给封装到了一个runnable中去了");
         return new Runnable() {
             @Override
             public void run() {
                 setCurrentEventExecutor(eventExecutor);
                 try {
+                    PrintUitls.printToConsole("会在ThreadPerTaskExecutor中执行这个command");
                     command.run();
                 } finally {
                     setCurrentEventExecutor(null);

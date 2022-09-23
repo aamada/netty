@@ -22,6 +22,7 @@ import io.netty.channel.EventLoopTaskQueueFactory;
 import io.netty.channel.MultithreadEventLoopGroup;
 import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.SingleThreadEventLoop;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.EventExecutorChooserFactory;
 import io.netty.util.concurrent.RejectedExecutionHandler;
@@ -183,12 +184,14 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
      */
     @Override
     protected EventLoop newChild(Executor executor, Object... args) throws Exception {
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop");
         // 前面的provider
         SelectorProvider selectorProvider = (SelectorProvider) args[0];
         // 线程选择器
         SelectStrategyFactory selectStrategyFactory = (SelectStrategyFactory) args[1];
         // 拒绝策略
         RejectedExecutionHandler rejectedExecutionHandler = (RejectedExecutionHandler) args[2];
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 这里有三个属性， 是一开始就来新创建的， 选择器selector提供者， 线程选择策略， 拒绝策略");
         EventLoopTaskQueueFactory taskQueueFactory = null;
         EventLoopTaskQueueFactory tailTaskQueueFactory = null;
 
@@ -201,6 +204,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
         }
         // 这个NioEventLoop还持有这个线程组
         // 线程组， 执行器， 选择器提供者， 线程选择策略， 拒绝策略， 两个队列工厂
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 这里就要开始去new NioEventLoop了, 它还持有这个group");
         return new NioEventLoop(this, executor, selectorProvider,
                 selectStrategyFactory.newSelectStrategy(),
                 rejectedExecutionHandler, taskQueueFactory, tailTaskQueueFactory);

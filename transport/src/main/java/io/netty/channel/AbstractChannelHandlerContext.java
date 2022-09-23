@@ -20,6 +20,7 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ResourceLeakHint;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.AbstractEventExecutor;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.OrderedEventExecutor;
@@ -504,9 +505,11 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         if (executor.inEventLoop()) {
             next.invokeBind(localAddress, promise);
         } else {
+            PrintUitls.printToConsole("safeExecutor, 下一个处理器节点去处理绑定事件");
             safeExecute(executor, new Runnable() {
                 @Override
                 public void run() {
+                    PrintUitls.printToConsole("执行任务， 处理绑定动作");
                     next.invokeBind(localAddress, promise);
                 }
             }, promise, null, false);

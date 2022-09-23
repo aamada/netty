@@ -15,6 +15,7 @@
  */
 package io.netty.channel;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.RejectedExecutionHandler;
 import io.netty.util.concurrent.RejectedExecutionHandlers;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
@@ -65,6 +66,7 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
                                     boolean addTaskWakesUp, Queue<Runnable> taskQueue, Queue<Runnable> tailTaskQueue,
                                     RejectedExecutionHandler rejectedExecutionHandler) {
         super(parent, executor, addTaskWakesUp, taskQueue, rejectedExecutionHandler);
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 开始创建SingleThreadEventLoop, 这里的tailTasks就是上一步传递进来的一个Queue");
         tailTasks = ObjectUtil.checkNotNull(tailTaskQueue, "tailTaskQueue");
     }
 
@@ -84,12 +86,15 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
         // promise里有channel， 有线程
         // channel -> NioServerSocketChannel
         // this -> EventLoop
-        return register(new DefaultChannelPromise(channel, this));
+        DefaultChannelPromise promise = new DefaultChannelPromise(channel, this);
+        PrintUitls.printToConsole("channel进行注册时， 新建promise=" + promise.hashCode());
+        return register(promise);
     }
 
     @Override
     public ChannelFuture register(final ChannelPromise promise) {
         ObjectUtil.checkNotNull(promise, "promise");
+        PrintUitls.printToConsole("promise里有channel， channel里有unsafe， 使用unsafe去注册");
         promise.channel().unsafe().register(this, promise);
         // promise
         // channnel

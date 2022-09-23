@@ -40,6 +40,7 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
      *        the {@link Channel} associated with this future
      */
     public DefaultChannelPromise(Channel channel) {
+        PrintUitls.printToConsole("新建一个DefaultChannelPromise");
         this.channel = checkNotNull(channel, "channel");
     }
 
@@ -51,7 +52,7 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
      */
     public DefaultChannelPromise(Channel channel, EventExecutor executor) {
         super(executor);
-        PrintUitls.printToConsole("new DefaultChannelPromise");
+        PrintUitls.printToConsole("新建一个DefaultChannelPromise");
         this.channel = checkNotNull(channel, "channel");
     }
 

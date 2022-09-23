@@ -14,9 +14,12 @@ public class NettyServer {
     private static final int BEGIN_PORT = 8000;
 
     public static void main(String[] args) {
+        PrintUitls.printToConsole("创建bossGroup");
         NioEventLoopGroup boosGroup = new NioEventLoopGroup();
+        PrintUitls.printToConsole("创建workerGroup");
         NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
+        PrintUitls.printToConsole("创建ServerBootstrap");
         final ServerBootstrap serverBootstrap = new ServerBootstrap();
         final AttributeKey<Object> clientKey = AttributeKey.newInstance("clientKey");
         serverBootstrap
@@ -29,8 +32,7 @@ public class NettyServer {
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     protected void initChannel(NioSocketChannel ch) {
-                        PrintUitls.printToConsole("protected void initChannel(NioSocketChannel ch)");
-                        System.out.println(ch.attr(clientKey).get());
+                        PrintUitls.printToConsole("触发客户自己写的初始化pipeline事件， 往这里加入一些自定义的handler");
                     }
                 });
 
@@ -39,12 +41,13 @@ public class NettyServer {
     }
 
     private static void bind(final ServerBootstrap serverBootstrap, final int port) {
+        PrintUitls.printToConsole("绑定去喽");
         serverBootstrap.bind(port).addListener(future -> {
-            PrintUitls.printToConsole("bind add listener after bind");
+            PrintUitls.printToConsole("绑定完成后， 调用的一个监听器");
             if (future.isSuccess()) {
-                System.out.println("端口[" + port + "]绑定成功!");
+                PrintUitls.printToConsole("端口[" + port + "]绑定成功!");
             } else {
-                System.err.println("端口[" + port + "]绑定失败!");
+                PrintUitls.printToConsole("端口[" + port + "]绑定失败!");
                 bind(serverBootstrap, port + 1);
             }
         });

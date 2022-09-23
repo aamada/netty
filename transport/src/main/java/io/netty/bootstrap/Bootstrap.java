@@ -26,6 +26,7 @@ import io.netty.resolver.AddressResolver;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.resolver.NameResolver;
 import io.netty.resolver.AddressResolverGroup;
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.internal.ObjectUtil;
@@ -166,6 +167,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
         } else {
             // Registration future is almost always fulfilled already, but just in case it's not.
             final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
+            PrintUitls.printToConsole("添加监听器， 往regFuture="+regFuture.hashCode()+", 里添加一个监听器, doResolveAndConnect0");
             // 如果没有完成初始化及注册， 那么注册一个监听器
             regFuture.addListener(new ChannelFutureListener() {
                 @Override
@@ -176,11 +178,13 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
                     if (cause != null) {
                         // Registration on the EventLoop failed so fail the ChannelPromise directly to not cause an
                         // IllegalStateException once we try to access the EventLoop of the Channel.
+                        PrintUitls.printToConsole("执行监听器, setFailure()");
                         promise.setFailure(cause);
                     } else {
                         // Registration was successful, so set the correct executor to use.
                         // See https://github.com/netty/netty/issues/2586
                         promise.registered();
+                        PrintUitls.printToConsole("执行监听器, doResolveAndConnect0()");
                         doResolveAndConnect0(channel, remoteAddress, localAddress, promise);
                     }
                 }
@@ -250,14 +254,17 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
         // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
         // the pipeline in its channelRegistered() implementation.
         final Channel channel = connectPromise.channel();
+        PrintUitls.printToConsole("添加任务, channel.connect");
         channel.eventLoop().execute(new Runnable() {
             @Override
             public void run() {
+                PrintUitls.printToConsole("执行任务， channel执行连接任务");
                 if (localAddress == null) {
                     channel.connect(remoteAddress, connectPromise);
                 } else {
                     channel.connect(remoteAddress, localAddress, connectPromise);
                 }
+                PrintUitls.printToConsole("添加监听器， ChannelPromise="+connectPromise.hashCode()+",CLOSE_ON_FAILURE");
                 connectPromise.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
             }
         });

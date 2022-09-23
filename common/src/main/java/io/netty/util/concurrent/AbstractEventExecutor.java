@@ -15,6 +15,7 @@
  */
 package io.netty.util.concurrent;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.UnstableApi;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -51,6 +52,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     protected AbstractEventExecutor(EventExecutorGroup parent) {
         // 这个parent就是一个NioEventLoopGroup
         this.parent = parent;
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 开始创建AbstractEventExecutor, this.parent = parent, 这个parent就是线程组");
     }
 
     // EventExecutor
@@ -181,6 +183,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     }
 
     protected static void runTask(@Execute Runnable task) {
+        PrintUitls.printToConsole("执行任务， eventloop里的任务");
         task.run();
     }
 

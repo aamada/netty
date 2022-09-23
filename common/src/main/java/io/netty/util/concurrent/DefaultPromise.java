@@ -180,7 +180,6 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public Promise<V> addListener(GenericFutureListener<? extends Future<? super V>> listener) {
-        PrintUitls.printToConsole("io.netty.util.concurrent.DefaultPromise#addListener");
         checkNotNull(listener, "listener");
 
         synchronized (this) {
@@ -190,6 +189,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
         if (isDone()) {
             // 如果已经完成了， 那么通知监听器
+            PrintUitls.printToConsole("添加监听器时， 顺带检查一下， 这个promise执行完了没有？ 如果这个promise执行完成了， 那么通知监听器们, promise = " + this.hashCode());
             notifyListeners();
         }
 
@@ -570,7 +570,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     private void notifyListenersNow() {
-        PrintUitls.printToConsole("io.netty.util.concurrent.DefaultPromise#notifyListenersNow");
+        PrintUitls.printToConsole("通知监听器们");
         Object listeners;
         // 将其进行同步
         synchronized (this) {
@@ -614,6 +614,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     private static void notifyListener0(Future future, GenericFutureListener l) {
         try {
             // 监听器去执行这个任务， 参数为一个Future， 未来返回值
+            PrintUitls.printToConsole("执行监听器， 在" + future.hashCode()+"里");
             l.operationComplete(future);
         } catch (Throwable t) {
             if (logger.isWarnEnabled()) {
@@ -623,6 +624,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     private void addListener0(GenericFutureListener<? extends Future<? super V>> listener) {
+        PrintUitls.printToConsole("添加监听器到listeners中去, this promise = " + this.hashCode());
         if (listeners == null) {
             listeners = listener;
         } else if (listeners instanceof DefaultFutureListeners) {
@@ -667,6 +669,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             RESULT_UPDATER.compareAndSet(this, UNCANCELLABLE, objResult)) {
             if (checkNotifyWaiters()) {
                 // 唤配置监听者
+                PrintUitls.printToConsole("给promise设置一个值，promise = "+ this.hashCode() +" 再调用监听器notifyListeners");
                 notifyListeners();
             }
             // 如果设置成功， 那么返回true

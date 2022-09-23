@@ -15,6 +15,8 @@
  */
 package io.netty.util.concurrent;
 
+import io.netty.util.cjm.utils.PrintUitls;
+
 import static io.netty.util.internal.ObjectUtil.checkPositive;
 
 import java.util.Collections;
@@ -82,15 +84,19 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
      */
     protected MultithreadEventExecutorGroup(int nThreads, Executor executor,
                                             EventExecutorChooserFactory chooserFactory, Object... args) {
+        PrintUitls.printToConsole("新建线程组， nThreads=DEFAULT_EVENT_LOOP_THREADS(两倍cpu数量)， executor=null, SelectorProvider=SelectorProvider.provider(), \r\nSelectStrategyFactory=DefaultSelectStrategyFactory.INSTANCE, RejectedExecutionHandlers.reject(), EventExecutorChooserFactory=DefaultEventExecutorChooserFactory.INSTANCE");
+        PrintUitls.printToConsole("新建线程组， 这里的EventExecutorChooserFactory, 是为了去创建一个选择的, 而前面创建的DefaultSelectStrategyFactory, 是给到子线程去使用的");
         // 确保这个数量为正的
         checkPositive(nThreads, "nThreads");
 
         if (executor == null) {
             // 如果这个线程池为null， 那么在这里新建一个
             // DefaultThreadFactory默认的线程创建策略
+            PrintUitls.printToConsole("新建线程组，executor=ThreadPerTaskExecutor(DefaultThreadFactory线程工厂)");
             executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
         }
 
+        PrintUitls.printToConsole("新建线程组，新建一个空的EventExecutor数组");
         // 事件执行器， 新建一个数组
         children = new EventExecutor[nThreads];
 
@@ -99,6 +105,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             try {
                 // 给每一个执行器赋值
                 // 留给子类去实现， 并且调用子类的方法
+                PrintUitls.printToConsole("新建线程组，循环去实例化每一个EventExecutor");
                 children[i] = newChild(executor, args);
                 success = true;
             } catch (Exception e) {
@@ -107,9 +114,11 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
                 throw new IllegalStateException("failed to create a child event loop", e);
             } finally {
                 // 如果不成功的话， 那么把之前， 已经实例化好的线程池， 那么直接关闭掉线程池
+                PrintUitls.printToConsole("如果不成功的话");
                 if (!success) {
                     for (int j = 0; j < i; j ++) {
                         // 关闭每一个线程池
+                        PrintUitls.printToConsole("新建线程组，循环调用shutdownGracefully");
                         children[j].shutdownGracefully();
                     }
 
@@ -118,7 +127,9 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
                         EventExecutor e = children[j];
                         try {
                             // 如果这个线程池没有关闭的话， 那么就等待这个线程池终止
+                            // 这里不会去执行， 返回true， 则为false
                             while (!e.isTerminated()) {
+                                PrintUitls.printToConsole("新建线程组，循环调用awaitTermination");
                                 e.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
                             }
                         } catch (InterruptedException interrupted) {
@@ -134,12 +145,15 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
 
         // 选择策略
         // 新建一个选择策略
+        PrintUitls.printToConsole("新建线程组， 新建一个选择器， 这个选择器里持有刚才新建的那些个线程, chooserFactory.newChooser(children)");
         chooser = chooserFactory.newChooser(children);
 
+        PrintUitls.printToConsole("新建线程组， 新建一个FutureListener=terminationListener");
         // 搞一个终止监听器
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {
             @Override
             public void operationComplete(Future<Object> future) throws Exception {
+                PrintUitls.printToConsole("监听器执行， terminationListener");
                 if (terminatedChildren.incrementAndGet() == children.length) {
                     terminationFuture.setSuccess(null);
                 }
@@ -149,12 +163,14 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         for (EventExecutor e: children) {
             // 这是属于这个线程的一个DefaultPromise
             // 给它新增一个监听器
+            PrintUitls.printToConsole("新建线程组， 循环的给这个线程EventLoop的promise添加一个监听器terminationListener");
             e.terminationFuture().addListener(terminationListener);
         }
 
         // 给其设置为不可变的集合
         Set<EventExecutor> childrenSet = new LinkedHashSet<EventExecutor>(children.length);
         Collections.addAll(childrenSet, children);
+        PrintUitls.printToConsole("新建线程组， 给这些children给修改成readonlyChildren");
         readonlyChildren = Collections.unmodifiableSet(childrenSet);
     }
 

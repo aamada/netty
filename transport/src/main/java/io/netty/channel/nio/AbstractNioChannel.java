@@ -388,7 +388,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             try {
                 // 将channel给注册到选择器上
                 // 这里还有就是， NioServerSocketChannel是作为attachment作为附件的, 取出NioSocketChannel注册到线程上
-                PrintUitls.printToConsole("真的注册了, io.netty.channel.nio.AbstractNioChannel#doRegister");
+                PrintUitls.printToConsole("真的注册了, 调用jdk的注册方法");
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {
@@ -414,6 +414,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     @Override
     protected void doBeginRead() throws Exception {
         // Channel.read() or ChannelHandlerContext.read() was called
+        PrintUitls.printToConsole("更新一下， 感兴趣的事件");
         final SelectionKey selectionKey = this.selectionKey;
         if (!selectionKey.isValid()) {
             return;

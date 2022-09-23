@@ -6,8 +6,8 @@ public class ThreadUtils {
         String name = thread.getName();
         StackTraceElement[] stackTrace = thread.getStackTrace();
         StackTraceElement stackTraceElement = stackTrace[4];
-        return "thread name = " + name + ";location=" +
+        return "thread name = " + name + ";location=【" +
                 stackTraceElement.getClassName() + "#" + stackTraceElement.getMethodName() +
-                ";lineNumber=" + stackTraceElement.getLineNumber();
+                ";lineNumber=" + stackTraceElement.getLineNumber() + "】";
     }
 }

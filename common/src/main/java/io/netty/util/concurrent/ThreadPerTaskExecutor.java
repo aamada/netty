@@ -15,6 +15,7 @@
  */
 package io.netty.util.concurrent;
 
+import io.netty.util.cjm.utils.PrintUitls;
 import io.netty.util.internal.ObjectUtil;
 
 import java.util.concurrent.Executor;
@@ -29,6 +30,7 @@ public final class ThreadPerTaskExecutor implements Executor {
 
     @Override
     public void execute(Runnable command) {
+        PrintUitls.printToConsole("从threadFactory中新建一个线程， 再去开始");
         threadFactory.newThread(command).start();
     }
 }

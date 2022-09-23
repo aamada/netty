@@ -189,6 +189,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                                         RejectedExecutionHandler rejectedHandler) {
         super(parent);
         // false
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 父类创建完了， 现在创建SingleThreadEventExecutor, addTaskWakesUp, maxPendingTasks, executor, taskQueue, rejectedExecutionHandler");
         this.addTaskWakesUp = addTaskWakesUp;
         // 可以挂多少个任务？
         this.maxPendingTasks = DEFAULT_MAX_PENDING_EXECUTOR_TASKS;
@@ -197,6 +198,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         // executor传递进来的执行器
         this.executor = ThreadExecutorMap.apply(executor, this);
         // 一个队列
+        PrintUitls.printToConsole("新建线程组， 新建newChild=NioEventLoop, 父类创建完了， 现在创建SingleThreadEventExecutor, taskQueue=就是上一步传递进来的");
         this.taskQueue = ObjectUtil.checkNotNull(taskQueue, "taskQueue");
         // 拒绝策略
         this.rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
@@ -249,6 +251,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             // 从队列中拿取任务
             Runnable task = taskQueue.poll();
             if (task != WAKEUP_TASK) {
+                PrintUitls.printToConsole("从taskQueue里拿任务task");
                 return task;
             }
         }
@@ -332,6 +335,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             if (!taskQueue.offer(scheduledTask)) {
                 // No space left in the task queue add it back to the scheduledTaskQueue so we pick it up again.
                 // 再次把这个任务给放入至队列中去
+                PrintUitls.printToConsole("刚才有一个任务， 放入至taskQueue里失败， 再次放入到scheduleTaskQueue中去, 一会还去拿出来");
                 scheduledTaskQueue.add((ScheduledFutureTask<?>) scheduledTask);
                 // 获取失败
                 return false;
@@ -392,7 +396,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      */
     protected void addTask(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
-        PrintUitls.printToConsole("io.netty.util.concurrent.SingleThreadEventExecutor#addTask");
+        PrintUitls.printToConsole("往taskQueue里加入任务");
         if (!offerTask(task)) {
             // 添加不成功， 那么拒绝
             reject(task);
@@ -477,6 +481,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * @return {@code true} if at least one task was executed.
      */
     protected final boolean runAllTasksFrom(Queue<Runnable> taskQueue) {
+        PrintUitls.printToConsole("执行taskQueue里的task");
         Runnable task = pollTaskFrom(taskQueue);
         if (task == null) {
             return false;
@@ -748,6 +753,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     @Override
     public Future<?> terminationFuture() {
+        PrintUitls.printToConsole("新建线程组，返回terminationFuture="+terminationFuture.hashCode());
         return terminationFuture;
     }
 
@@ -1069,9 +1075,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void doStartThread() {
         assert thread == null;
+        PrintUitls.printToConsole("线程开始跑了， executor=ThreadExecutorMap.apply(executor, this), 里面封装了ThreadPerTaskExecutor, 这个executor里还持有一个NioEventLoop， 还是封装到一个runnable中, 这里的executor里面还封装了一个executor");
         executor.execute(new Runnable() {
             @Override
             public void run() {
+                PrintUitls.printToConsole("在executor中， 执行runnable， 这里的executor有点复杂");
                 // 记录当前线程
                 thread = Thread.currentThread();
                 if (interrupted) {

@@ -894,14 +894,14 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelRegistered() {
-        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline#fireChannelRegistered");
+        PrintUitls.printToConsole("触发pipeline的注册事件");
         AbstractChannelHandlerContext.invokeChannelRegistered(head);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelUnregistered() {
-        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline#fireChannelUnregistered");
+        PrintUitls.printToConsole("触发pipeline的取消注册事件");
         AbstractChannelHandlerContext.invokeChannelUnregistered(head);
         return this;
     }
@@ -978,14 +978,14 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline fireChannelActive() {
         // 如果是连接的话， 从这里开始
         // 连接成功后， 客户端收到后， 进行的操作
-        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline#fireChannelActive");
+        PrintUitls.printToConsole("触发pipeline的激活事件");
         AbstractChannelHandlerContext.invokeChannelActive(head);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelInactive() {
-        PrintUitls.printToConsole("io.netty.channel.DefaultChannelPipeline.fireChannelInactive");
+        PrintUitls.printToConsole("触发pipeline的不激活事件");
         AbstractChannelHandlerContext.invokeChannelInactive(head);
         return this;
     }
@@ -1005,12 +1005,14 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     @Override
     public final ChannelPipeline fireChannelRead(Object msg) {
         // msg = NioSocketChannel, 一个新的连接事件， 从这里开始读
+        PrintUitls.printToConsole("触发pipeline的读事件");
         AbstractChannelHandlerContext.invokeChannelRead(head, msg);
         return this;
     }
 
     @Override
     public final ChannelPipeline fireChannelReadComplete() {
+        PrintUitls.printToConsole("触发pipeline的读完成事件");
         AbstractChannelHandlerContext.invokeChannelReadComplete(head);
         return this;
     }
@@ -1059,6 +1061,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
+        PrintUitls.printToConsole("pipeline里触发了绑定操作， 从tail处理器开始的");
         return tail.bind(localAddress, promise);
     }
 
